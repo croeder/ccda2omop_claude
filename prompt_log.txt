@@ -17,4 +17,37 @@ Observations. I'd like to target OMOP CDM version 5.3. Please build placeholder 
 
 > can you modify the approach to use Xpath and extract directly from the API rather than populating structs for the CCDA data 
 
+> can you add use of the OMOP vocabulary tables in /Users/croeder/CCAD_OMOP_Private/CONCEPT.csv and /Users/croeder/CCAD_OMOP_Private/CONCEPT_RELATIONSHIP.csv 
 
+
+
+> can you add use of the OMOP vocabulary tables in /Users/croeder/claude_play/CCAD_OMOP_Private/CONCEPT.csv and /Users/croeder/claude_play/CCAD_OMOP_Private/CONCEPT_RELATIONSHIP.csv 
+
+
+> how are concepts from CCDA that map to multiple concepts in OMOP handled? 
+
+
+ Here's a concrete example:
+
+  Source: ICD10CM O23.521 - "Salpingo-oophoritis in pregnancy, first trimester"
+
+  Maps to TWO SNOMED concepts:
+  1. 4239938 - "First trimester pregnancy" (the timing)
+  2. 45757144 - "Salpingo-oophoritis in pregnancy" (the condition)
+
+  Current behavior: Only ONE is kept (the last one read from file).
+
+  Options for handling this:
+
+  1. Store all mappings - Return a slice of concept IDs, create multiple rows in output
+  2. Domain-aware selection - Pick the most clinically relevant mapping based on domain
+  3. Primary/secondary - Store primary mapping, log secondary for review
+
+  Would you like me to implement one of these approaches? Option 1 (storing all mappings) is most complete but increases output size. Option 2 requires domain-specific logic (e.g., for conditions, prefer the actual condition over temporal context).
+
+> 1 
+
+
+> commit the code 
+
+# in for $20/month pro subscription and another $5 so far.
