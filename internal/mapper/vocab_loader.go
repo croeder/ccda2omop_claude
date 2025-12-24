@@ -245,6 +245,7 @@ func (vl *VocabLoader) GetStandardConceptIDs(vocabID, code string) []int64 {
 
 // LoadSupplementaryVocab loads additional vocabulary concepts from a CSV file
 // Uses the same format as CONCEPT.csv (tab-separated)
+// Lines starting with # are treated as comments and skipped
 func (vl *VocabLoader) LoadSupplementaryVocab(filepath string) error {
 	file, err := os.Open(filepath)
 	if err != nil {
@@ -256,17 +257,32 @@ func (vl *VocabLoader) LoadSupplementaryVocab(filepath string) error {
 	buf := make([]byte, 0, 64*1024)
 	scanner.Buffer(buf, 1024*1024)
 
-	// Skip header
-	if scanner.Scan() {
-		header := scanner.Text()
-		if !strings.HasPrefix(header, "concept_id") {
-			return fmt.Errorf("unexpected header in supplementary vocab: %s", header)
+	// Skip comment lines and find header
+	foundHeader := false
+	for scanner.Scan() {
+		line := scanner.Text()
+		// Skip empty lines and comments
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
 		}
+		// Expect header line
+		if !strings.HasPrefix(line, "concept_id") {
+			return fmt.Errorf("unexpected header in supplementary vocab: %s", line)
+		}
+		foundHeader = true
+		break
+	}
+	if !foundHeader {
+		return fmt.Errorf("no header found in supplementary vocab file")
 	}
 
 	count := 0
 	for scanner.Scan() {
 		line := scanner.Text()
+		// Skip empty lines and comments
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
 		fields := strings.Split(line, "\t")
 		if len(fields) < 7 {
 			continue

@@ -1,3 +1,15 @@
+# SYNTHETIC CPT4 VOCABULARY - NOT FOR PRODUCTION USE
+#
+# These are synthetic CPT4 concept entries created for demonstration purposes.
+# The concept_ids (2100000001+) are fabricated and do not correspond to official OMOP concept IDs.
+# The CPT4 codes themselves are real procedure codes, but this file is NOT an official vocabulary.
+#
+# For production use, obtain the official CPT4 vocabulary from:
+#   - OMOP Athena (https://athena.ohdsi.org/) - requires accepting AMA license terms
+#   - UMLS (https://www.nlm.nih.gov/research/umls/) - requires license agreement
+#
+# CPT (Current Procedural Terminology) is a registered trademark of the American Medical Association.
+#
 concept_id	concept_name	domain_id	vocabulary_id	concept_class_id	standard_concept	concept_code	valid_start_date	valid_end_date	invalid_reason
 2100000001	Total knee replacement	Procedure	CPT4	CPT4	S	27447	19700101	20991231
 2100000002	Coronary artery bypass, 3 venous grafts	Procedure	CPT4	CPT4	S	33512	19700101	20991231
