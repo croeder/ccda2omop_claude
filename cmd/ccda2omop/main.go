@@ -25,6 +25,7 @@ func main() {
 	analyzeFlag := flag.Bool("analyze", false, "Analyze input file(s) and show code mappings (requires -concept)")
 	analyzeOutput := flag.String("analyze-output", "", "Output CSV file for analysis (default: stdout)")
 	summary := flag.Bool("summary", false, "Show summary of C-CDA sections to OMOP table mappings (use with -analyze)")
+	cvxFile := flag.String("cvx", "", "Path to supplementary CVX vocabulary file for immunization mapping")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "ccda2omop - Convert C-CDA XML documents to OMOP CDM 5.3 CSV files\n\n")
@@ -72,7 +73,7 @@ func main() {
 
 	// Analyze mode
 	if *analyzeFlag {
-		if err := runAnalyze(xmlFiles, *conceptFile, *relationshipFile, *analyzeOutput, *summary, *verbose); err != nil {
+		if err := runAnalyze(xmlFiles, *conceptFile, *relationshipFile, *cvxFile, *analyzeOutput, *summary, *verbose); err != nil {
 			log.Fatalf("Analysis failed: %v", err)
 		}
 		return
@@ -116,7 +117,7 @@ func findXMLFiles(dir string) ([]string, error) {
 	return files, nil
 }
 
-func runAnalyze(inputFiles []string, conceptFile, relationshipFile, outputFile string, showSummary, verbose bool) error {
+func runAnalyze(inputFiles []string, conceptFile, relationshipFile, cvxFile, outputFile string, showSummary, verbose bool) error {
 	// Load vocabulary if provided
 	var vocabLoader *mapper.VocabLoader
 	if conceptFile != "" {
@@ -133,6 +134,15 @@ func runAnalyze(inputFiles []string, conceptFile, relationshipFile, outputFile s
 			}
 			if err := vocabLoader.LoadConceptRelationships(relationshipFile); err != nil {
 				return fmt.Errorf("failed to load CONCEPT_RELATIONSHIP.csv: %w", err)
+			}
+		}
+		// Load supplementary CVX vocabulary if provided
+		if cvxFile != "" {
+			if verbose {
+				log.Printf("Loading CVX vocabulary from %s", cvxFile)
+			}
+			if err := vocabLoader.LoadSupplementaryVocab(cvxFile); err != nil {
+				return fmt.Errorf("failed to load CVX vocabulary: %w", err)
 			}
 		}
 	}

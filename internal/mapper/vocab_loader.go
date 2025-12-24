@@ -243,6 +243,69 @@ func (vl *VocabLoader) GetStandardConceptIDs(vocabID, code string) []int64 {
 	return []int64{concept.ConceptID}
 }
 
+// LoadSupplementaryVocab loads additional vocabulary concepts from a CSV file
+// Uses the same format as CONCEPT.csv (tab-separated)
+func (vl *VocabLoader) LoadSupplementaryVocab(filepath string) error {
+	file, err := os.Open(filepath)
+	if err != nil {
+		return fmt.Errorf("failed to open supplementary vocab file: %w", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	buf := make([]byte, 0, 64*1024)
+	scanner.Buffer(buf, 1024*1024)
+
+	// Skip header
+	if scanner.Scan() {
+		header := scanner.Text()
+		if !strings.HasPrefix(header, "concept_id") {
+			return fmt.Errorf("unexpected header in supplementary vocab: %s", header)
+		}
+	}
+
+	count := 0
+	for scanner.Scan() {
+		line := scanner.Text()
+		fields := strings.Split(line, "\t")
+		if len(fields) < 7 {
+			continue
+		}
+
+		conceptID, err := strconv.ParseInt(fields[0], 10, 64)
+		if err != nil {
+			continue
+		}
+
+		// Skip if invalid_reason is set (field 9 if present)
+		if len(fields) > 9 && fields[9] != "" {
+			continue
+		}
+
+		concept := &Concept{
+			ConceptID:       conceptID,
+			ConceptName:     fields[1],
+			DomainID:        fields[2],
+			VocabularyID:    fields[3],
+			ConceptClassID:  fields[4],
+			StandardConcept: fields[5],
+			ConceptCode:     fields[6],
+		}
+
+		key := conceptKey(concept.VocabularyID, concept.ConceptCode)
+		vl.conceptIndex[key] = concept
+		vl.conceptByID[conceptID] = concept
+		count++
+	}
+
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("error reading supplementary vocab file: %w", err)
+	}
+
+	log.Printf("Loaded %d supplementary concepts from %s", count, filepath)
+	return nil
+}
+
 // OIDToVocabularyID maps C-CDA code system OIDs to OMOP vocabulary IDs
 func OIDToVocabularyID(oid string) string {
 	switch oid {
@@ -261,6 +324,8 @@ func OIDToVocabularyID(oid string) string {
 	case "2.16.840.1.113883.6.14":
 		return "HCPCS"
 	case "2.16.840.1.113883.12.292":
+		return "CVX"
+	case "2.16.840.1.113883.6.59": // Alternate CVX OID
 		return "CVX"
 	case "2.16.840.1.113883.6.69":
 		return "NDC"
