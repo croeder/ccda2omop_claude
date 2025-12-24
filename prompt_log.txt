@@ -1,0 +1,20 @@
+
+2025-12-24
+> I'd like to start a project to convert HL7 C-CDA documents to rows in OHDSI OMOP tables. 
+
+
+> I'd like to code this in golang. I'd like to extract the following sections: Encounters, Problems, Medications, Procedures, Vital Signs, Lab Results, Allergies, Immunizations, Devices and 
+Observations. I'd like to target OMOP CDM version 5.3. Please build placeholder vocabulary mappings for now. I'd like the input to be single C-CDA XML files. I'd like to base the work on code in
+ this github repository: https://github.com/cladteam/CCDA_OMOP_Conversion_Package. 
+
+> add unit tests for the parser 
+
+> add tests for the mapper module 
+
+
+> can you modify the approach to use generic dictionaries instead of coded structs 
+
+
+> can you modify the approach to use Xpath and extract directly from the API rather than populating structs for the CCDA data 
+
+
