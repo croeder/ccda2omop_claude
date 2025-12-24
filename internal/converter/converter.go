@@ -11,12 +11,57 @@ import (
 )
 
 type Config struct {
-	InputFile string
-	OutputDir string
-	Verbose   bool
+	InputFile       string
+	OutputDir       string
+	Verbose         bool
+	ConceptFile     string // Path to CONCEPT.csv
+	RelationshipFile string // Path to CONCEPT_RELATIONSHIP.csv
+}
+
+// Shared vocab loader for batch processing
+var sharedVocabLoader *mapper.VocabLoader
+
+// LoadVocabulary loads vocabulary files and caches them for reuse
+func LoadVocabulary(conceptFile, relationshipFile string, verbose bool) error {
+	if sharedVocabLoader != nil {
+		return nil // Already loaded
+	}
+
+	if conceptFile == "" {
+		return nil // No vocabulary files specified
+	}
+
+	if verbose {
+		log.Printf("Loading OMOP vocabulary from %s", conceptFile)
+	}
+
+	loader := mapper.NewVocabLoader()
+
+	if err := loader.LoadConcepts(conceptFile); err != nil {
+		return fmt.Errorf("failed to load CONCEPT.csv: %w", err)
+	}
+
+	if relationshipFile != "" {
+		if verbose {
+			log.Printf("Loading concept relationships from %s", relationshipFile)
+		}
+		if err := loader.LoadConceptRelationships(relationshipFile); err != nil {
+			return fmt.Errorf("failed to load CONCEPT_RELATIONSHIP.csv: %w", err)
+		}
+	}
+
+	sharedVocabLoader = loader
+	return nil
 }
 
 func Run(cfg Config) error {
+	// Load vocabulary if specified and not already loaded
+	if cfg.ConceptFile != "" && sharedVocabLoader == nil {
+		if err := LoadVocabulary(cfg.ConceptFile, cfg.RelationshipFile, cfg.Verbose); err != nil {
+			return err
+		}
+	}
+
 	if cfg.Verbose {
 		log.Printf("Parsing C-CDA file: %s", cfg.InputFile)
 	}
@@ -37,8 +82,14 @@ func Run(cfg Config) error {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
-	// Map C-CDA to OMOP
-	m := mapper.New(cfg.Verbose)
+	// Map C-CDA to OMOP (use vocab loader if available)
+	var m *mapper.Mapper
+	if sharedVocabLoader != nil {
+		m = mapper.NewWithVocabLoader(sharedVocabLoader, cfg.Verbose)
+	} else {
+		m = mapper.New(cfg.Verbose)
+	}
+
 	omopData, err := m.MapDocument(doc)
 	if err != nil {
 		return fmt.Errorf("failed to map C-CDA to OMOP: %w", err)

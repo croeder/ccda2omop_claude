@@ -13,11 +13,13 @@ func main() {
 	inputFile := flag.String("input", "", "Path to C-CDA XML input file (required)")
 	outputDir := flag.String("output", "./output", "Directory for OMOP CSV output files")
 	verbose := flag.Bool("verbose", false, "Enable verbose logging")
+	conceptFile := flag.String("concept", "", "Path to OMOP CONCEPT.csv vocabulary file")
+	relationshipFile := flag.String("relationship", "", "Path to OMOP CONCEPT_RELATIONSHIP.csv file")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "ccda2omop - Convert C-CDA XML documents to OMOP CDM 5.3 CSV files\n\n")
 		fmt.Fprintf(os.Stderr, "Usage:\n")
-		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml> [-output <dir>] [-verbose]\n\n")
+		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml> [-output <dir>] [-concept <vocab.csv>] [-relationship <rel.csv>] [-verbose]\n\n")
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 	}
@@ -34,9 +36,11 @@ func main() {
 	}
 
 	cfg := converter.Config{
-		InputFile:  *inputFile,
-		OutputDir:  *outputDir,
-		Verbose:    *verbose,
+		InputFile:        *inputFile,
+		OutputDir:        *outputDir,
+		Verbose:          *verbose,
+		ConceptFile:      *conceptFile,
+		RelationshipFile: *relationshipFile,
 	}
 
 	if err := converter.Run(cfg); err != nil {
