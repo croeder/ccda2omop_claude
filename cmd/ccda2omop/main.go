@@ -21,12 +21,14 @@ func main() {
 	rulesFile := flag.String("rules-file", "", "Path to YAML rules file or directory (implies -rules)")
 	analyze := flag.Bool("analyze", false, "Analyze input file and show code mappings (requires -concept)")
 	analyzeOutput := flag.String("analyze-output", "", "Output CSV file for analysis (default: stdout)")
+	summary := flag.Bool("summary", false, "Show summary of C-CDA sections to OMOP table mappings (use with -analyze)")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "ccda2omop - Convert C-CDA XML documents to OMOP CDM 5.3 CSV files\n\n")
 		fmt.Fprintf(os.Stderr, "Usage:\n")
 		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml> [-output <dir>] [-concept <vocab.csv>] [-relationship <rel.csv>] [-rules] [-rules-file <rules.yaml>] [-verbose]\n")
-		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml> -analyze -concept <vocab.csv> [-relationship <rel.csv>] [-analyze-output <file.csv>]\n\n")
+		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml> -analyze -concept <vocab.csv> [-relationship <rel.csv>] [-analyze-output <file.csv>]\n")
+		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml> -analyze -summary -concept <vocab.csv> [-relationship <rel.csv>]\n\n")
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 	}
@@ -44,7 +46,7 @@ func main() {
 
 	// Analyze mode
 	if *analyze {
-		if err := runAnalyze(*inputFile, *conceptFile, *relationshipFile, *analyzeOutput, *verbose); err != nil {
+		if err := runAnalyze(*inputFile, *conceptFile, *relationshipFile, *analyzeOutput, *summary, *verbose); err != nil {
 			log.Fatalf("Analysis failed: %v", err)
 		}
 		return
@@ -68,7 +70,7 @@ func main() {
 	fmt.Printf("Conversion complete. Output written to: %s\n", *outputDir)
 }
 
-func runAnalyze(inputFile, conceptFile, relationshipFile, outputFile string, verbose bool) error {
+func runAnalyze(inputFile, conceptFile, relationshipFile, outputFile string, showSummary, verbose bool) error {
 	// Load vocabulary if provided
 	var vocabLoader *mapper.VocabLoader
 	if conceptFile != "" {
@@ -99,6 +101,12 @@ func runAnalyze(inputFile, conceptFile, relationshipFile, outputFile string, ver
 	mappings, err := a.AnalyzeFile(inputFile)
 	if err != nil {
 		return fmt.Errorf("failed to analyze file: %w", err)
+	}
+
+	// Summary mode - show C-CDA to OMOP table mapping summary
+	if showSummary {
+		a.WriteMappingSummary(mappings, os.Stdout)
+		return nil
 	}
 
 	// Output results

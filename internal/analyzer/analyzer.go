@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/antchfx/xmlquery"
@@ -328,4 +329,215 @@ func (a *Analyzer) PrintSummary(mappings []CodeMapping, w io.Writer) {
 			fmt.Fprintf(w, "  [%s] %s (%s) - %s\n", m.Section, m.SourceCode, m.SourceVocabulary, m.SourceDisplayName)
 		}
 	}
+}
+
+// domainToTable maps OMOP domain_id to the primary CDM table
+func domainToTable(domainID string) string {
+	switch domainID {
+	case "Condition":
+		return "condition_occurrence"
+	case "Drug":
+		return "drug_exposure"
+	case "Procedure":
+		return "procedure_occurrence"
+	case "Measurement":
+		return "measurement"
+	case "Observation":
+		return "observation"
+	case "Device":
+		return "device_exposure"
+	case "Visit":
+		return "visit_occurrence"
+	case "Specimen":
+		return "specimen"
+	case "Note":
+		return "note"
+	default:
+		if domainID == "" {
+			return "(unmapped)"
+		}
+		return domainID
+	}
+}
+
+// SectionMapping tracks the mapping from a C-CDA section/path to OMOP tables
+type SectionMapping struct {
+	Section     string
+	CodePath    string
+	TotalCodes  int
+	MappedCodes int
+	OMOPTables  map[string]int // table name -> count
+}
+
+// WriteMappingSummary writes a summary showing C-CDA sections/paths and their OMOP table mappings
+func (a *Analyzer) WriteMappingSummary(mappings []CodeMapping, w io.Writer) {
+	// Group by section and extract code path from XPath
+	sectionPaths := make(map[string]*SectionMapping)
+
+	for _, m := range mappings {
+		// Extract a simplified path identifier from the XPath
+		pathKey := extractCodePath(m.XPath)
+		key := m.Section + "|" + pathKey
+
+		sm, exists := sectionPaths[key]
+		if !exists {
+			sm = &SectionMapping{
+				Section:    m.Section,
+				CodePath:   pathKey,
+				OMOPTables: make(map[string]int),
+			}
+			sectionPaths[key] = sm
+		}
+
+		sm.TotalCodes++
+		if m.OMOPDomainID != "" {
+			sm.MappedCodes++
+			table := domainToTable(m.OMOPDomainID)
+			sm.OMOPTables[table]++
+		}
+	}
+
+	// Print header
+	fmt.Fprintf(w, "\n")
+	fmt.Fprintf(w, "================================================================================\n")
+	fmt.Fprintf(w, "C-CDA to OMOP Mapping Summary\n")
+	fmt.Fprintf(w, "================================================================================\n\n")
+
+	// Collect and sort sections
+	var sections []string
+	sectionMap := make(map[string][]*SectionMapping)
+	for _, sm := range sectionPaths {
+		if _, exists := sectionMap[sm.Section]; !exists {
+			sections = append(sections, sm.Section)
+		}
+		sectionMap[sm.Section] = append(sectionMap[sm.Section], sm)
+	}
+	sort.Strings(sections)
+
+	// Print by section
+	for _, section := range sections {
+		paths := sectionMap[section]
+		sort.Slice(paths, func(i, j int) bool {
+			return paths[i].CodePath < paths[j].CodePath
+		})
+
+		// Calculate section totals
+		sectionTotal := 0
+		sectionMapped := 0
+		sectionTables := make(map[string]int)
+		for _, p := range paths {
+			sectionTotal += p.TotalCodes
+			sectionMapped += p.MappedCodes
+			for table, count := range p.OMOPTables {
+				sectionTables[table] += count
+			}
+		}
+
+		fmt.Fprintf(w, "C-CDA Section: %s\n", section)
+		fmt.Fprintf(w, "  Total codes: %d, Mapped: %d (%.1f%%)\n",
+			sectionTotal, sectionMapped, percentage(sectionMapped, sectionTotal))
+
+		// Show OMOP tables for this section
+		fmt.Fprintf(w, "  OMOP Tables:\n")
+		tables := sortedKeys(sectionTables)
+		for _, table := range tables {
+			count := sectionTables[table]
+			fmt.Fprintf(w, "    → %-25s %d codes\n", table, count)
+		}
+
+		// Show code paths within section
+		fmt.Fprintf(w, "  Code Paths:\n")
+		for _, p := range paths {
+			tables := sortedKeys(p.OMOPTables)
+			tableStr := strings.Join(tables, ", ")
+			if tableStr == "" {
+				tableStr = "(no mapping)"
+			}
+			fmt.Fprintf(w, "    %-40s → %s (%d codes)\n", p.CodePath, tableStr, p.TotalCodes)
+		}
+		fmt.Fprintf(w, "\n")
+	}
+
+	// Overall summary
+	fmt.Fprintf(w, "================================================================================\n")
+	fmt.Fprintf(w, "Overall Summary\n")
+	fmt.Fprintf(w, "================================================================================\n\n")
+
+	totalCodes := 0
+	mappedCodes := 0
+	allTables := make(map[string]int)
+	for _, sm := range sectionPaths {
+		totalCodes += sm.TotalCodes
+		mappedCodes += sm.MappedCodes
+		for table, count := range sm.OMOPTables {
+			allTables[table] += count
+		}
+	}
+
+	fmt.Fprintf(w, "Total C-CDA codes analyzed: %d\n", totalCodes)
+	fmt.Fprintf(w, "Successfully mapped: %d (%.1f%%)\n", mappedCodes, percentage(mappedCodes, totalCodes))
+	fmt.Fprintf(w, "Unmapped: %d (%.1f%%)\n\n", totalCodes-mappedCodes, percentage(totalCodes-mappedCodes, totalCodes))
+
+	fmt.Fprintf(w, "OMOP CDM Tables populated:\n")
+	tables := sortedKeys(allTables)
+	for _, table := range tables {
+		count := allTables[table]
+		fmt.Fprintf(w, "  %-30s %d records\n", table, count)
+	}
+}
+
+// extractCodePath extracts a simplified code path from a full XPath
+func extractCodePath(xpath string) string {
+	// Extract the code-specific part after the entry index
+	// e.g., ".../observation[1]/value[1]" -> "value"
+	// e.g., ".../substanceAdministration[1]/consumable/.../code[1]" -> "consumable/.../code"
+
+	parts := strings.Split(xpath, "/")
+	var codeParts []string
+	foundEntry := false
+
+	for _, part := range parts {
+		// Skip empty parts
+		if part == "" {
+			continue
+		}
+		// Look for entry-level elements
+		if strings.HasPrefix(part, "observation[") ||
+			strings.HasPrefix(part, "substanceAdministration[") ||
+			strings.HasPrefix(part, "procedure[") ||
+			strings.HasPrefix(part, "act[") ||
+			strings.HasPrefix(part, "organizer[") {
+			foundEntry = true
+			continue
+		}
+		if foundEntry {
+			// Remove index suffixes for cleaner display
+			cleanPart := part
+			if idx := strings.Index(part, "["); idx > 0 {
+				cleanPart = part[:idx]
+			}
+			codeParts = append(codeParts, cleanPart)
+		}
+	}
+
+	if len(codeParts) == 0 {
+		return "(root)"
+	}
+	return strings.Join(codeParts, "/")
+}
+
+func percentage(part, total int) float64 {
+	if total == 0 {
+		return 0.0
+	}
+	return float64(part) / float64(total) * 100.0
+}
+
+func sortedKeys(m map[string]int) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
