@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"sort"
+	"strings"
 
 	"github.com/ccda2omop/internal/analyzer"
 	"github.com/ccda2omop/internal/converter"
@@ -12,49 +15,71 @@ import (
 )
 
 func main() {
-	inputFile := flag.String("input", "", "Path to C-CDA XML input file (required)")
+	inputPath := flag.String("input", "", "Path to C-CDA XML file or directory of XML files (required)")
 	outputDir := flag.String("output", "./output", "Directory for OMOP CSV output files")
 	verbose := flag.Bool("verbose", false, "Enable verbose logging")
 	conceptFile := flag.String("concept", "", "Path to OMOP CONCEPT.csv vocabulary file")
 	relationshipFile := flag.String("relationship", "", "Path to OMOP CONCEPT_RELATIONSHIP.csv file")
 	useRules := flag.Bool("rules", false, "Use rule-based mapper")
 	rulesFile := flag.String("rules-file", "", "Path to YAML rules file or directory (implies -rules)")
-	analyze := flag.Bool("analyze", false, "Analyze input file and show code mappings (requires -concept)")
+	analyzeFlag := flag.Bool("analyze", false, "Analyze input file(s) and show code mappings (requires -concept)")
 	analyzeOutput := flag.String("analyze-output", "", "Output CSV file for analysis (default: stdout)")
 	summary := flag.Bool("summary", false, "Show summary of C-CDA sections to OMOP table mappings (use with -analyze)")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "ccda2omop - Convert C-CDA XML documents to OMOP CDM 5.3 CSV files\n\n")
 		fmt.Fprintf(os.Stderr, "Usage:\n")
-		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml> [-output <dir>] [-concept <vocab.csv>] [-relationship <rel.csv>] [-rules] [-rules-file <rules.yaml>] [-verbose]\n")
-		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml> -analyze -concept <vocab.csv> [-relationship <rel.csv>] [-analyze-output <file.csv>]\n")
-		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml> -analyze -summary -concept <vocab.csv> [-relationship <rel.csv>]\n\n")
+		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml|dir> [-output <dir>] [-concept <vocab.csv>] [-relationship <rel.csv>] [-rules] [-rules-file <rules.yaml>] [-verbose]\n")
+		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml|dir> -analyze -concept <vocab.csv> [-relationship <rel.csv>] [-analyze-output <file.csv>]\n")
+		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml|dir> -analyze -summary -concept <vocab.csv> [-relationship <rel.csv>]\n\n")
+		fmt.Fprintf(os.Stderr, "The -input flag accepts either a single XML file or a directory containing XML files.\n")
+		fmt.Fprintf(os.Stderr, "When a directory is specified, all .xml files are processed and results are aggregated.\n\n")
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 	}
 
 	flag.Parse()
 
-	if *inputFile == "" {
+	if *inputPath == "" {
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	if _, err := os.Stat(*inputFile); os.IsNotExist(err) {
-		log.Fatalf("Input file does not exist: %s", *inputFile)
+	info, err := os.Stat(*inputPath)
+	if os.IsNotExist(err) {
+		log.Fatalf("Input path does not exist: %s", *inputPath)
+	}
+	if err != nil {
+		log.Fatalf("Error accessing input path: %v", err)
+	}
+
+	// Collect XML files
+	var xmlFiles []string
+	if info.IsDir() {
+		xmlFiles, err = findXMLFiles(*inputPath)
+		if err != nil {
+			log.Fatalf("Failed to find XML files: %v", err)
+		}
+		if len(xmlFiles) == 0 {
+			log.Fatalf("No XML files found in directory: %s", *inputPath)
+		}
+		if *verbose {
+			log.Printf("Found %d XML files in %s", len(xmlFiles), *inputPath)
+		}
+	} else {
+		xmlFiles = []string{*inputPath}
 	}
 
 	// Analyze mode
-	if *analyze {
-		if err := runAnalyze(*inputFile, *conceptFile, *relationshipFile, *analyzeOutput, *summary, *verbose); err != nil {
+	if *analyzeFlag {
+		if err := runAnalyze(xmlFiles, *conceptFile, *relationshipFile, *analyzeOutput, *summary, *verbose); err != nil {
 			log.Fatalf("Analysis failed: %v", err)
 		}
 		return
 	}
 
-	// Convert mode
+	// Convert mode - process all files and aggregate output
 	cfg := converter.Config{
-		InputFile:        *inputFile,
 		OutputDir:        *outputDir,
 		Verbose:          *verbose,
 		ConceptFile:      *conceptFile,
@@ -63,14 +88,35 @@ func main() {
 		RulesFile:        *rulesFile,
 	}
 
-	if err := converter.Run(cfg); err != nil {
+	if err := converter.RunBatch(xmlFiles, cfg); err != nil {
 		log.Fatalf("Conversion failed: %v", err)
 	}
 
-	fmt.Printf("Conversion complete. Output written to: %s\n", *outputDir)
+	fmt.Printf("Conversion complete. Processed %d file(s). Output written to: %s\n", len(xmlFiles), *outputDir)
 }
 
-func runAnalyze(inputFile, conceptFile, relationshipFile, outputFile string, showSummary, verbose bool) error {
+// findXMLFiles returns a sorted list of XML files from a directory
+func findXMLFiles(dir string) ([]string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	var files []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if strings.HasSuffix(strings.ToLower(name), ".xml") {
+			files = append(files, filepath.Join(dir, name))
+		}
+	}
+	sort.Strings(files)
+	return files, nil
+}
+
+func runAnalyze(inputFiles []string, conceptFile, relationshipFile, outputFile string, showSummary, verbose bool) error {
 	// Load vocabulary if provided
 	var vocabLoader *mapper.VocabLoader
 	if conceptFile != "" {
@@ -94,23 +140,32 @@ func runAnalyze(inputFile, conceptFile, relationshipFile, outputFile string, sho
 	// Create analyzer
 	a := analyzer.New(vocabLoader, verbose)
 
-	// Analyze file
-	if verbose {
-		log.Printf("Analyzing C-CDA file: %s", inputFile)
+	// Analyze all files and aggregate mappings
+	var allMappings []analyzer.CodeMapping
+	for i, inputFile := range inputFiles {
+		if verbose {
+			log.Printf("Analyzing file %d/%d: %s", i+1, len(inputFiles), inputFile)
+		}
+		mappings, err := a.AnalyzeFile(inputFile)
+		if err != nil {
+			return fmt.Errorf("failed to analyze file %s: %w", inputFile, err)
+		}
+		allMappings = append(allMappings, mappings...)
 	}
-	mappings, err := a.AnalyzeFile(inputFile)
-	if err != nil {
-		return fmt.Errorf("failed to analyze file: %w", err)
+
+	if verbose && len(inputFiles) > 1 {
+		log.Printf("Aggregated %d mappings from %d files", len(allMappings), len(inputFiles))
 	}
 
 	// Summary mode - show C-CDA to OMOP table mapping summary
 	if showSummary {
-		a.WriteMappingSummary(mappings, os.Stdout)
+		a.WriteMappingSummary(allMappings, os.Stdout)
 		return nil
 	}
 
 	// Output results
 	var output *os.File
+	var err error
 	if outputFile != "" {
 		output, err = os.Create(outputFile)
 		if err != nil {
@@ -122,13 +177,13 @@ func runAnalyze(inputFile, conceptFile, relationshipFile, outputFile string, sho
 	}
 
 	// Write CSV
-	if err := a.WriteCSV(mappings, output); err != nil {
+	if err := a.WriteCSV(allMappings, output); err != nil {
 		return fmt.Errorf("failed to write CSV: %w", err)
 	}
 
 	// Print summary to stderr if output is to file
 	if outputFile != "" {
-		a.PrintSummary(mappings, os.Stderr)
+		a.PrintSummary(allMappings, os.Stderr)
 		fmt.Fprintf(os.Stderr, "\nAnalysis written to: %s\n", outputFile)
 	}
 
