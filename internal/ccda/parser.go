@@ -924,16 +924,23 @@ func parseDevices(section xmlSection) []Device {
 			sup := entry.Supply
 			device := Device{
 				ID:            getIDString(sup.ID),
-				Code:          parseCodedValue(sup.Product.ManufacturedProduct.ManufacturedMaterial.Code),
 				EffectiveTime: parseEffectiveTime(sup.EffectiveTime),
 				Status:        parseCodedValue(sup.StatusCode),
 			}
 
-			// Get UDI from participant
+			// Try to get code from product first
+			if sup.Product.ManufacturedProduct.ManufacturedMaterial.Code.Code != "" {
+				device.Code = parseCodedValue(sup.Product.ManufacturedProduct.ManufacturedMaterial.Code)
+			}
+
+			// Get UDI and device code from participant
 			for _, part := range sup.Participant {
 				if len(part.ParticipantRole.ID) > 0 {
 					device.UDI = part.ParticipantRole.ID[0].Extension
-					break
+				}
+				// Device code may be in playingDevice
+				if part.ParticipantRole.PlayingDevice.Code.Code != "" {
+					device.Code = parseCodedValue(part.ParticipantRole.PlayingDevice.Code)
 				}
 			}
 
