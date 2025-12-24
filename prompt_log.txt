@@ -236,3 +236,125 @@ Observations. I'd like to target OMOP CDM version 5.3. Please build placeholder 
 
 > could you modify the project to work from a directory of input files 
 
+
+> could you run the analysis and save the output to a file 
+⏺ Bash(./ccda2omop -input testdata/sample.xml -analyze -analyze-output analysis.csv 2>&1)
+  ⎿  === Analysis Summary ===      
+
+     Total codes found: 17
+     … +23 lines (ctrl+o to expand)
+
+⏺ Read(analysis.csv)
+  ⎿  Read 19 lines
+
+⏺ Done. Analysis saved to analysis.csv with 17 codes extracted from the sample file.
+
+  Note: Most codes show no_vocab_loader status because no OMOP vocabulary file was provided. To get full OMOP concept mappings, run with:
+
+  ./ccda2omop -input testdata/sample.xml -analyze -concept CONCEPT.csv -analyze-output analysis.csv
+
+> could you run the analysis on all the files in the CCDA-data folder and use the CONCEPT.csv file 
+
+
+(suggested) > run the summary view on those files 
+ Bash(./ccda2omop -input /Users/croeder/claude_play/CCDA-data/resources -analyze -summary -concept /Users/croeder/claude_play/CCDA_OMOP_Private/CONCEPT.csv 2>&1)
+  ⎿  2025/12/24 15:34:14 Loaded 1687274 concepts from vocabulary tables              
+
+     ================================================================================
+     … +88 lines (ctrl+o to expand)
+
+⏺ The summary shows how C-CDA sections map to OMOP tables:
+
+  Best Mapped Sections:
+  - LabResults: 100% (58 codes → measurement)
+  - VitalSigns: 100% (45 codes → measurement)
+  - MedicalEquipment: 100% (6 codes → device_exposure)
+  - Problems: 89.7% (29 codes → condition_occurrence)
+
+  Needs Attention:
+  - Immunizations: 0% (CVX codes not in vocabulary)
+  - Procedures: 9.3% (CPT codes not matching)
+  - Medications: 55.9% (route codes unmapped)
+
+  Overall: 216 of 332 codes (65.1%) successfully mapped to OMOP concepts.
+
+
+(suggested) > add CVX vocabulary for immunizations mapping 
+
+
+*************** Look at this!
+⏺ Let me create a CVX vocabulary file with the common vaccine codes:  *******************************************
+***************
+
+
+
+> could you run the analysis and summary on files in CCDA-data/xml_load_test 
+
+
+(suggested) > add CPT4 vocabulary for procedures mapping 
+
+
+⏺ Bash(grep ",CPT4," /Users/croeder/claude_play/CCDA_OMOP_Private/CONCEPT.csv | wc -l)
+  ⎿  0
+
+⏺ CPT4 vocabulary is not in your CONCEPT.csv (it's proprietary). Let me create a supplementary file with the common codes found in your data:
+
+⏺ Bash(grep "Procedures" analysis_full.csv | grep ",CPT4," | grep "unmapped" | cut -d',' -f3 | sort -u)
+  ⎿  27447                         
+     33512
+     33535
+     … +28 lines (ctrl+o to expan
+
+⏺ Now let me check for HCPCS codes:
+⏺ Now let me update the CLI to accept a directory of supplementary vocab files:
+
+⏺ Procedure mapping improved significantly:
+
+  Before CPT4/HCPCS:
+  - Procedures: 948/2,483 (38.2%)
+  - Overall: 16,171/20,414 (79.2%)
+
+  After CPT4/HCPCS:
+  - Procedures: 2,236/2,483 (90.1%)
+  - Overall: 17,459/20,414 (85.5%)
+
+> could you modify the paths in the analysis so they do not include the instance counts? I mean, the integers in square brackets in the paths should be removed. 
+
+> could you re-run the analysis on the xml_load_test directory and summarize 
+ Bash(./ccda2omop -input /Users/croeder/claude_play/CCDA-data/xml_load_test -analyze -summary -concept /Users/croeder/claude_play/CCDA_OMOP_Private/CONCEPT.csv -vocab…) timeout: 10m 0s
+  ⎿  2025/12/24 15:57:02 Loaded 1687274 concepts from vocabulary tables      
+     2025/12/24 15:57:02 Loaded 31 supplementary concepts from vocab/CPT4.csv
+     2025/12/24 15:57:02 Loaded 20 supplementary concepts from vocab/CVX.csv
+     … +92 lines (ctrl+o to expand)
+
+⏺ Analysis Summary: 747 files, 20,414 codes
+
+  | Section          | Total | Mapped | Rate  | Primary OMOP Table   |
+  |------------------|-------|--------|-------|----------------------|
+  | VitalSigns       | 7,010 | 6,991  | 99.7% | measurement          |
+  | LabResults       | 3,015 | 2,979  | 98.8% | measurement          |
+  | MedicalEquipment | 3     | 3      | 100%  | device_exposure      |
+  | Procedures       | 2,483 | 2,236  | 90.1% | procedure_occurrence |
+  | Medications      | 2,365 | 2,008  | 84.9% | drug_exposure        |
+  | Problems         | 2,570 | 2,153  | 83.8% | condition_occurrence |
+  | Immunizations    | 76    | 51     | 67.1% | drug_exposure        |
+  | Allergies        | 2,145 | 1,008  | 47.0% | drug_exposure        |
+  | SocialHistory    | 747   | 30     | 4.0%  | observation          |
+
+  Overall: 17,459 / 20,414 (85.5%) mapped
+
+  OMOP Tables:
+  | Table                | Records |
+  |----------------------|---------|
+  | measurement          | 10,102  |
+  | drug_exposure        | 3,004   |
+  | condition_occurrence | 2,183   |
+  | procedure_occurrence | 1,685   |
+  | observation          | 482     |
+  | device_exposure      | 3       |
+
+> could you do it again, but save the analysis_full.csv file this time? 
+
+ > can you summarize analysis_full.csv and save that to a file? 
+⏺ Done. Saved analysis_summary.txt (3.4 KB) with the mapping summary.
+
