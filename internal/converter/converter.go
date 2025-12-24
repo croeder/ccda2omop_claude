@@ -11,11 +11,12 @@ import (
 )
 
 type Config struct {
-	InputFile       string
-	OutputDir       string
-	Verbose         bool
-	ConceptFile     string // Path to CONCEPT.csv
+	InputFile        string
+	OutputDir        string
+	Verbose          bool
+	ConceptFile      string // Path to CONCEPT.csv
 	RelationshipFile string // Path to CONCEPT_RELATIONSHIP.csv
+	UseRules         bool   // Use rule-based mapper instead of hardcoded mapper
 }
 
 // Shared vocab loader for batch processing
@@ -82,17 +83,35 @@ func Run(cfg Config) error {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
-	// Map C-CDA to OMOP (use vocab loader if available)
-	var m *mapper.Mapper
-	if sharedVocabLoader != nil {
-		m = mapper.NewWithVocabLoader(sharedVocabLoader, cfg.Verbose)
-	} else {
-		m = mapper.New(cfg.Verbose)
-	}
+	// Map C-CDA to OMOP
+	var omopData *omop.OMOPData
 
-	omopData, err := m.MapDocument(doc)
-	if err != nil {
-		return fmt.Errorf("failed to map C-CDA to OMOP: %w", err)
+	if cfg.UseRules {
+		// Use rule-based mapper
+		var rm *mapper.RuleBasedMapper
+		if sharedVocabLoader != nil {
+			rm = mapper.NewRuleBasedMapperWithLoader(sharedVocabLoader, cfg.Verbose)
+		} else {
+			rm = mapper.NewRuleBasedMapper(mapper.NewVocabularyMapper(), cfg.Verbose)
+		}
+		var err error
+		omopData, err = rm.MapDocument(doc)
+		if err != nil {
+			return fmt.Errorf("failed to map C-CDA to OMOP (rules): %w", err)
+		}
+	} else {
+		// Use traditional mapper
+		var m *mapper.Mapper
+		if sharedVocabLoader != nil {
+			m = mapper.NewWithVocabLoader(sharedVocabLoader, cfg.Verbose)
+		} else {
+			m = mapper.New(cfg.Verbose)
+		}
+		var err error
+		omopData, err = m.MapDocument(doc)
+		if err != nil {
+			return fmt.Errorf("failed to map C-CDA to OMOP: %w", err)
+		}
 	}
 
 	// Write OMOP CSV files
