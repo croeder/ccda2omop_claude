@@ -219,3 +219,20 @@ Observations. I'd like to target OMOP CDM version 5.3. Please build placeholder 
 
 
 # In fact, I've been build for $15 + $20 so far.
+
+
+
+> can you refactor the rules to be expressed in yaml instead of go source 
+
+
+> could you modify the yaml rule system so that each rule is in a separate file where the filename is the same as the name attribute in yaml? 
+
+> Can you create a new tool that reads the input files, recording the section and xpath to the data, and maps the input concepts to the standard OMOP concepts, and domain_id? 
+
+
+> could you add a summarization option to the analysis just created? I'd like to know counts of CCDA side sections and paths and how many OMOP tables they would map to. 
+  ./ccda2omop -input file.xml -analyze -summary -concept CONCEPT.csv -relationship CONCEPT_RELATIONSHIP.csv
+
+
+> could you modify the project to work from a directory of input files 
+
