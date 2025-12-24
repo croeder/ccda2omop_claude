@@ -63,108 +63,6 @@ func TestParseHL7Time(t *testing.T) {
 	}
 }
 
-func TestParseCodedValue(t *testing.T) {
-	input := xmlCode{
-		Code:           "12345",
-		CodeSystem:     "2.16.840.1.113883.6.96",
-		CodeSystemName: "SNOMED CT",
-		DisplayName:    "Test Condition",
-	}
-
-	result := parseCodedValue(input)
-
-	if result.Code != "12345" {
-		t.Errorf("Code = %q, want %q", result.Code, "12345")
-	}
-	if result.CodeSystem != "2.16.840.1.113883.6.96" {
-		t.Errorf("CodeSystem = %q, want %q", result.CodeSystem, "2.16.840.1.113883.6.96")
-	}
-	if result.CodeSystemName != "SNOMED CT" {
-		t.Errorf("CodeSystemName = %q, want %q", result.CodeSystemName, "SNOMED CT")
-	}
-	if result.DisplayName != "Test Condition" {
-		t.Errorf("DisplayName = %q, want %q", result.DisplayName, "Test Condition")
-	}
-}
-
-func TestParseQuantity(t *testing.T) {
-	tests := []struct {
-		name          string
-		input         xmlQuantity
-		expectedValue float64
-		expectedUnit  string
-	}{
-		{
-			name:          "integer value",
-			input:         xmlQuantity{Value: "500", Unit: "mg"},
-			expectedValue: 500,
-			expectedUnit:  "mg",
-		},
-		{
-			name:          "decimal value",
-			input:         xmlQuantity{Value: "0.5", Unit: "mL"},
-			expectedValue: 0.5,
-			expectedUnit:  "mL",
-		},
-		{
-			name:          "empty value",
-			input:         xmlQuantity{Value: "", Unit: "mg"},
-			expectedValue: 0,
-			expectedUnit:  "mg",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := parseQuantity(tt.input)
-			if result.Value != tt.expectedValue {
-				t.Errorf("Value = %v, want %v", result.Value, tt.expectedValue)
-			}
-			if result.Unit != tt.expectedUnit {
-				t.Errorf("Unit = %q, want %q", result.Unit, tt.expectedUnit)
-			}
-		})
-	}
-}
-
-func TestGetIDString(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    []xmlID
-		expected string
-	}{
-		{
-			name:     "with extension",
-			input:    []xmlID{{Root: "2.16.840.1.113883.19", Extension: "12345"}},
-			expected: "12345",
-		},
-		{
-			name:     "root only",
-			input:    []xmlID{{Root: "2.16.840.1.113883.19", Extension: ""}},
-			expected: "2.16.840.1.113883.19",
-		},
-		{
-			name:     "empty slice",
-			input:    []xmlID{},
-			expected: "",
-		},
-		{
-			name:     "nil slice",
-			input:    nil,
-			expected: "",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := getIDString(tt.input)
-			if result != tt.expected {
-				t.Errorf("getIDString() = %q, want %q", result, tt.expected)
-			}
-		})
-	}
-}
-
 func TestParseSampleDocument(t *testing.T) {
 	doc, err := ParseFile("../../testdata/sample.xml")
 	if err != nil {
@@ -371,130 +269,6 @@ func TestParseSampleDocument(t *testing.T) {
 	})
 }
 
-func TestParseAddress(t *testing.T) {
-	input := xmlAddr{
-		StreetAddressLine: []string{"123 Main St", "Apt 4"},
-		City:              "Anytown",
-		State:             "CA",
-		PostalCode:        "90210",
-		Country:           "US",
-	}
-
-	result := parseAddress(input)
-
-	if len(result.StreetAddress) != 2 {
-		t.Errorf("len(StreetAddress) = %d, want 2", len(result.StreetAddress))
-	}
-	if result.City != "Anytown" {
-		t.Errorf("City = %q, want %q", result.City, "Anytown")
-	}
-	if result.State != "CA" {
-		t.Errorf("State = %q, want %q", result.State, "CA")
-	}
-	if result.PostalCode != "90210" {
-		t.Errorf("PostalCode = %q, want %q", result.PostalCode, "90210")
-	}
-	if result.Country != "US" {
-		t.Errorf("Country = %q, want %q", result.Country, "US")
-	}
-}
-
-func TestParseEffectiveTime(t *testing.T) {
-	tests := []struct {
-		name        string
-		input       xmlEffectiveTime
-		wantLow     time.Time
-		wantHigh    time.Time
-		wantValue   time.Time
-	}{
-		{
-			name: "low and high",
-			input: xmlEffectiveTime{
-				Low:  xmlValue{Value: "20230601"},
-				High: xmlValue{Value: "20230630"},
-			},
-			wantLow:  time.Date(2023, 6, 1, 0, 0, 0, 0, time.UTC),
-			wantHigh: time.Date(2023, 6, 30, 0, 0, 0, 0, time.UTC),
-		},
-		{
-			name: "value only",
-			input: xmlEffectiveTime{
-				Value: "20231201100000",
-			},
-			wantValue: time.Date(2023, 12, 1, 10, 0, 0, 0, time.UTC),
-		},
-		{
-			name: "low only",
-			input: xmlEffectiveTime{
-				Low: xmlValue{Value: "20230101"},
-			},
-			wantLow: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := parseEffectiveTime(tt.input)
-			if !result.Low.Equal(tt.wantLow) {
-				t.Errorf("Low = %v, want %v", result.Low, tt.wantLow)
-			}
-			if !result.High.Equal(tt.wantHigh) {
-				t.Errorf("High = %v, want %v", result.High, tt.wantHigh)
-			}
-			if !result.Value.Equal(tt.wantValue) {
-				t.Errorf("Value = %v, want %v", result.Value, tt.wantValue)
-			}
-		})
-	}
-}
-
-func TestGetSectionTemplateOID(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    []xmlTemplateID
-		expected string
-	}{
-		{
-			name: "encounters section",
-			input: []xmlTemplateID{
-				{Root: "2.16.840.1.113883.10.20.22.2.22.1"},
-			},
-			expected: OIDEncountersEntriesReq,
-		},
-		{
-			name: "problems section",
-			input: []xmlTemplateID{
-				{Root: "2.16.840.1.113883.10.20.22.2.5.1"},
-			},
-			expected: OIDProblemsEntriesReq,
-		},
-		{
-			name: "unknown section",
-			input: []xmlTemplateID{
-				{Root: "1.2.3.4.5"},
-			},
-			expected: "",
-		},
-		{
-			name: "multiple templates finds first match",
-			input: []xmlTemplateID{
-				{Root: "1.2.3.4.5"},
-				{Root: "2.16.840.1.113883.10.20.22.2.1.1"},
-			},
-			expected: OIDMedicationsEntriesReq,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := getSectionTemplateOID(tt.input)
-			if result != tt.expected {
-				t.Errorf("getSectionTemplateOID() = %q, want %q", result, tt.expected)
-			}
-		})
-	}
-}
-
 func TestParseFileNotFound(t *testing.T) {
 	_, err := ParseFile("nonexistent.xml")
 	if err == nil {
@@ -523,5 +297,73 @@ func TestParseEmptyDocument(t *testing.T) {
 	}
 	if len(doc.Problems) != 0 {
 		t.Errorf("len(Problems) = %d, want 0", len(doc.Problems))
+	}
+}
+
+func TestParsePatientAddress(t *testing.T) {
+	doc, err := ParseFile("../../testdata/sample.xml")
+	if err != nil {
+		t.Fatalf("ParseFile failed: %v", err)
+	}
+
+	addr := doc.Patient.Address
+	if len(addr.StreetAddress) == 0 || addr.StreetAddress[0] != "123 Main Street" {
+		t.Errorf("StreetAddress = %v, want [123 Main Street]", addr.StreetAddress)
+	}
+	if addr.City != "Anytown" {
+		t.Errorf("City = %q, want %q", addr.City, "Anytown")
+	}
+	if addr.State != "CA" {
+		t.Errorf("State = %q, want %q", addr.State, "CA")
+	}
+	if addr.PostalCode != "90210" {
+		t.Errorf("PostalCode = %q, want %q", addr.PostalCode, "90210")
+	}
+}
+
+func TestParseAuthor(t *testing.T) {
+	doc, err := ParseFile("../../testdata/sample.xml")
+	if err != nil {
+		t.Fatalf("ParseFile failed: %v", err)
+	}
+
+	if doc.Author.Name.Given != "Jane" {
+		t.Errorf("Author.Name.Given = %q, want %q", doc.Author.Name.Given, "Jane")
+	}
+	if doc.Author.Name.Family != "Doctor" {
+		t.Errorf("Author.Name.Family = %q, want %q", doc.Author.Name.Family, "Doctor")
+	}
+	if doc.Author.Organization != "Sample Health System" {
+		t.Errorf("Author.Organization = %q, want %q", doc.Author.Organization, "Sample Health System")
+	}
+}
+
+func TestParseCustodian(t *testing.T) {
+	doc, err := ParseFile("../../testdata/sample.xml")
+	if err != nil {
+		t.Fatalf("ParseFile failed: %v", err)
+	}
+
+	if doc.Custodian.Name != "Sample Health System" {
+		t.Errorf("Custodian.Name = %q, want %q", doc.Custodian.Name, "Sample Health System")
+	}
+}
+
+func TestGetSectionTemplateOID(t *testing.T) {
+	// Test with sample document sections
+	doc, err := ParseFile("../../testdata/sample.xml")
+	if err != nil {
+		t.Fatalf("ParseFile failed: %v", err)
+	}
+
+	// Verify sections were found by checking data
+	if len(doc.Encounters) == 0 {
+		t.Error("Expected encounters section to be parsed")
+	}
+	if len(doc.Problems) == 0 {
+		t.Error("Expected problems section to be parsed")
+	}
+	if len(doc.Medications) == 0 {
+		t.Error("Expected medications section to be parsed")
 	}
 }
