@@ -1,0 +1,32 @@
+concept_id	concept_name	domain_id	vocabulary_id	concept_class_id	standard_concept	concept_code	valid_start_date	valid_end_date	invalid_reason
+2100000001	Total knee replacement	Procedure	CPT4	CPT4	S	27447	19700101	20991231
+2100000002	Coronary artery bypass, 3 venous grafts	Procedure	CPT4	CPT4	S	33512	19700101	20991231
+2100000003	Coronary artery bypass, arterial, 3 grafts	Procedure	CPT4	CPT4	S	33535	19700101	20991231
+2100000004	Transcatheter stent placement	Procedure	CPT4	CPT4	S	37205	19700101	20991231
+2100000005	Tonsillectomy, under age 12	Procedure	CPT4	CPT4	S	42825	19700101	20991231
+2100000006	Sigmoidoscopy, diagnostic	Procedure	CPT4	CPT4	S	45330	19700101	20991231
+2100000007	Colonoscopy, diagnostic	Procedure	CPT4	CPT4	S	45378	19700101	20991231
+2100000008	Cholecystectomy	Procedure	CPT4	CPT4	S	47600	19700101	20991231
+2100000009	Prostatectomy, radical	Procedure	CPT4	CPT4	S	55810	19700101	20991231
+2100000010	Total abdominal hysterectomy	Procedure	CPT4	CPT4	S	58150	19700101	20991231
+2100000011	Obstetrical care	Procedure	CPT4	CPT4	S	59410	19700101	20991231
+2100000012	Cataract extraction with lens implant	Procedure	CPT4	CPT4	S	66983	19700101	20991231
+2100000013	Chest X-ray, PA and lateral	Procedure	CPT4	CPT4	S	71020	19700101	20991231
+2100000014	X-ray exam of spine	Procedure	CPT4	CPT4	S	72010	19700101	20991231
+2100000015	Radiologic procedure, unlisted	Procedure	CPT4	CPT4	S	76499	19700101	20991231
+2100000016	Screening mammography, bilateral	Procedure	CPT4	CPT4	S	77057	19700101	20991231
+2100000017	Special radiation treatment	Procedure	CPT4	CPT4	S	77470	19700101	20991231
+2100000018	Bone imaging, limited area	Procedure	CPT4	CPT4	S	78300	19700101	20991231
+2100000019	Urinalysis with microscopy	Procedure	CPT4	CPT4	S	81000	19700101	20991231
+2100000020	Hematocrit	Procedure	CPT4	CPT4	S	85014	19700101	20991231
+2100000021	Tissue culture, chromosome analysis	Procedure	CPT4	CPT4	S	88235	19700101	20991231
+2100000022	Influenza virus vaccine, intramuscular	Procedure	CPT4	CPT4	S	90661	19700101	20991231
+2100000023	Pneumococcal vaccine, 7 valent	Procedure	CPT4	CPT4	S	90669	19700101	20991231
+2100000024	Pneumococcal vaccine, 23 valent	Procedure	CPT4	CPT4	S	90732	19700101	20991231
+2100000025	Hemodialysis procedure	Procedure	CPT4	CPT4	S	90935	19700101	20991231
+2100000026	Eye exam, established patient	Procedure	CPT4	CPT4	S	92012	19700101	20991231
+2100000027	Coronary artery angioplasty	Procedure	CPT4	CPT4	S	92982	19700101	20991231
+2100000028	Cardiac catheterization injection	Procedure	CPT4	CPT4	S	93543	19700101	20991231
+2100000029	Unlisted chemotherapy procedure	Procedure	CPT4	CPT4	S	96549	19700101	20991231
+2100000030	Medical nutrition therapy, individual	Procedure	CPT4	CPT4	S	97802	19700101	20991231
+2100000031	Smoking cessation counseling, 3-10 min	Procedure	CPT4	CPT4	S	99406	19700101	20991231

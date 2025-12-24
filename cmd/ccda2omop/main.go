@@ -25,7 +25,7 @@ func main() {
 	analyzeFlag := flag.Bool("analyze", false, "Analyze input file(s) and show code mappings (requires -concept)")
 	analyzeOutput := flag.String("analyze-output", "", "Output CSV file for analysis (default: stdout)")
 	summary := flag.Bool("summary", false, "Show summary of C-CDA sections to OMOP table mappings (use with -analyze)")
-	cvxFile := flag.String("cvx", "", "Path to supplementary CVX vocabulary file for immunization mapping")
+	vocabDir := flag.String("vocab-dir", "", "Path to directory containing supplementary vocabulary CSV files (e.g., CVX.csv, CPT4.csv)")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "ccda2omop - Convert C-CDA XML documents to OMOP CDM 5.3 CSV files\n\n")
@@ -73,7 +73,7 @@ func main() {
 
 	// Analyze mode
 	if *analyzeFlag {
-		if err := runAnalyze(xmlFiles, *conceptFile, *relationshipFile, *cvxFile, *analyzeOutput, *summary, *verbose); err != nil {
+		if err := runAnalyze(xmlFiles, *conceptFile, *relationshipFile, *vocabDir, *analyzeOutput, *summary, *verbose); err != nil {
 			log.Fatalf("Analysis failed: %v", err)
 		}
 		return
@@ -94,6 +94,31 @@ func main() {
 	}
 
 	fmt.Printf("Conversion complete. Processed %d file(s). Output written to: %s\n", len(xmlFiles), *outputDir)
+}
+
+// loadSupplementaryVocabs loads all CSV files from a directory as supplementary vocabularies
+func loadSupplementaryVocabs(vocabLoader *mapper.VocabLoader, dir string, verbose bool) error {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return fmt.Errorf("failed to read vocab directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if strings.HasSuffix(strings.ToLower(name), ".csv") {
+			filePath := filepath.Join(dir, name)
+			if verbose {
+				log.Printf("Loading supplementary vocabulary from %s", filePath)
+			}
+			if err := vocabLoader.LoadSupplementaryVocab(filePath); err != nil {
+				return fmt.Errorf("failed to load %s: %w", name, err)
+			}
+		}
+	}
+	return nil
 }
 
 // findXMLFiles returns a sorted list of XML files from a directory
@@ -117,7 +142,7 @@ func findXMLFiles(dir string) ([]string, error) {
 	return files, nil
 }
 
-func runAnalyze(inputFiles []string, conceptFile, relationshipFile, cvxFile, outputFile string, showSummary, verbose bool) error {
+func runAnalyze(inputFiles []string, conceptFile, relationshipFile, vocabDir, outputFile string, showSummary, verbose bool) error {
 	// Load vocabulary if provided
 	var vocabLoader *mapper.VocabLoader
 	if conceptFile != "" {
@@ -136,13 +161,10 @@ func runAnalyze(inputFiles []string, conceptFile, relationshipFile, cvxFile, out
 				return fmt.Errorf("failed to load CONCEPT_RELATIONSHIP.csv: %w", err)
 			}
 		}
-		// Load supplementary CVX vocabulary if provided
-		if cvxFile != "" {
-			if verbose {
-				log.Printf("Loading CVX vocabulary from %s", cvxFile)
-			}
-			if err := vocabLoader.LoadSupplementaryVocab(cvxFile); err != nil {
-				return fmt.Errorf("failed to load CVX vocabulary: %w", err)
+		// Load supplementary vocabularies from directory if provided
+		if vocabDir != "" {
+			if err := loadSupplementaryVocabs(vocabLoader, vocabDir, verbose); err != nil {
+				return fmt.Errorf("failed to load supplementary vocabularies: %w", err)
 			}
 		}
 	}
