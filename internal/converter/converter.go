@@ -17,6 +17,7 @@ type Config struct {
 	ConceptFile      string // Path to CONCEPT.csv
 	RelationshipFile string // Path to CONCEPT_RELATIONSHIP.csv
 	UseRules         bool   // Use rule-based mapper instead of hardcoded mapper
+	RulesFile        string // Path to YAML rules file (optional, uses Go-defined rules if empty)
 }
 
 // Shared vocab loader for batch processing
@@ -89,12 +90,30 @@ func Run(cfg Config) error {
 	if cfg.UseRules {
 		// Use rule-based mapper
 		var rm *mapper.RuleBasedMapper
-		if sharedVocabLoader != nil {
-			rm = mapper.NewRuleBasedMapperWithLoader(sharedVocabLoader, cfg.Verbose)
-		} else {
-			rm = mapper.NewRuleBasedMapper(mapper.NewVocabularyMapper(), cfg.Verbose)
-		}
 		var err error
+
+		if cfg.RulesFile != "" {
+			// Load rules from YAML file
+			if cfg.Verbose {
+				log.Printf("Loading mapping rules from %s", cfg.RulesFile)
+			}
+			if sharedVocabLoader != nil {
+				rm, err = mapper.NewRuleBasedMapperFromYAMLWithLoader(cfg.RulesFile, sharedVocabLoader, cfg.Verbose)
+			} else {
+				rm, err = mapper.NewRuleBasedMapperFromYAML(cfg.RulesFile, mapper.NewVocabularyMapper(), cfg.Verbose)
+			}
+			if err != nil {
+				return fmt.Errorf("failed to load rules file: %w", err)
+			}
+		} else {
+			// Use Go-defined rules
+			if sharedVocabLoader != nil {
+				rm = mapper.NewRuleBasedMapperWithLoader(sharedVocabLoader, cfg.Verbose)
+			} else {
+				rm = mapper.NewRuleBasedMapper(mapper.NewVocabularyMapper(), cfg.Verbose)
+			}
+		}
+
 		omopData, err = rm.MapDocument(doc)
 		if err != nil {
 			return fmt.Errorf("failed to map C-CDA to OMOP (rules): %w", err)

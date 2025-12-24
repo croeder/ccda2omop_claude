@@ -15,12 +15,13 @@ func main() {
 	verbose := flag.Bool("verbose", false, "Enable verbose logging")
 	conceptFile := flag.String("concept", "", "Path to OMOP CONCEPT.csv vocabulary file")
 	relationshipFile := flag.String("relationship", "", "Path to OMOP CONCEPT_RELATIONSHIP.csv file")
-	useRules := flag.Bool("rules", false, "Use rule-based mapper (experimental)")
+	useRules := flag.Bool("rules", false, "Use rule-based mapper")
+	rulesFile := flag.String("rules-file", "", "Path to YAML rules file (implies -rules)")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "ccda2omop - Convert C-CDA XML documents to OMOP CDM 5.3 CSV files\n\n")
 		fmt.Fprintf(os.Stderr, "Usage:\n")
-		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml> [-output <dir>] [-concept <vocab.csv>] [-relationship <rel.csv>] [-rules] [-verbose]\n\n")
+		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml> [-output <dir>] [-concept <vocab.csv>] [-relationship <rel.csv>] [-rules] [-rules-file <rules.yaml>] [-verbose]\n\n")
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 	}
@@ -42,7 +43,8 @@ func main() {
 		Verbose:          *verbose,
 		ConceptFile:      *conceptFile,
 		RelationshipFile: *relationshipFile,
-		UseRules:         *useRules,
+		UseRules:         *useRules || *rulesFile != "",
+		RulesFile:        *rulesFile,
 	}
 
 	if err := converter.Run(cfg); err != nil {

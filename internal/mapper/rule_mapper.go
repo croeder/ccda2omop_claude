@@ -11,13 +11,15 @@ import (
 // RuleBasedMapper uses declarative rules to transform C-CDA documents to OMOP
 type RuleBasedMapper struct {
 	engine  *RuleEngine
+	rules   []MappingRule
 	verbose bool
 }
 
-// NewRuleBasedMapper creates a new rule-based mapper
+// NewRuleBasedMapper creates a new rule-based mapper with default Go-defined rules
 func NewRuleBasedMapper(vocab *VocabularyMapper, verbose bool) *RuleBasedMapper {
 	return &RuleBasedMapper{
 		engine:  NewRuleEngine(vocab, verbose),
+		rules:   AllRules, // Use Go-defined rules as default
 		verbose: verbose,
 	}
 }
@@ -26,6 +28,25 @@ func NewRuleBasedMapper(vocab *VocabularyMapper, verbose bool) *RuleBasedMapper 
 func NewRuleBasedMapperWithLoader(loader *VocabLoader, verbose bool) *RuleBasedMapper {
 	vocab := NewVocabularyMapperWithLoader(loader)
 	return NewRuleBasedMapper(vocab, verbose)
+}
+
+// NewRuleBasedMapperFromYAML creates a rule-based mapper with rules loaded from YAML
+func NewRuleBasedMapperFromYAML(rulesFile string, vocab *VocabularyMapper, verbose bool) (*RuleBasedMapper, error) {
+	rules, err := LoadRulesFromYAML(rulesFile)
+	if err != nil {
+		return nil, err
+	}
+	return &RuleBasedMapper{
+		engine:  NewRuleEngine(vocab, verbose),
+		rules:   rules,
+		verbose: verbose,
+	}, nil
+}
+
+// NewRuleBasedMapperFromYAMLWithLoader creates a rule-based mapper with YAML rules and vocab loader
+func NewRuleBasedMapperFromYAMLWithLoader(rulesFile string, loader *VocabLoader, verbose bool) (*RuleBasedMapper, error) {
+	vocab := NewVocabularyMapperWithLoader(loader)
+	return NewRuleBasedMapperFromYAML(rulesFile, vocab, verbose)
 }
 
 // MapDocument transforms a C-CDA document to OMOP data using rules
@@ -51,114 +72,142 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 	}
 
 	// Map problems using rules
-	conditions, err := m.mapWithRule(ProblemRule, doc.Problems, personID, visitMap)
-	if err != nil {
-		return nil, err
-	}
-	for _, c := range conditions {
-		data.ConditionOccurrences = append(data.ConditionOccurrences, m.toConditionOccurrence(c))
-	}
-	if m.verbose {
-		log.Printf("Mapped %d problems to %d condition records (rule-based)", len(doc.Problems), len(conditions))
+	if rule := m.getRuleBySection("Problems"); rule != nil {
+		conditions, err := m.mapWithRule(*rule, doc.Problems, personID, visitMap)
+		if err != nil {
+			return nil, err
+		}
+		for _, c := range conditions {
+			data.ConditionOccurrences = append(data.ConditionOccurrences, m.toConditionOccurrence(c))
+		}
+		if m.verbose {
+			log.Printf("Mapped %d problems to %d condition records (rule-based)", len(doc.Problems), len(conditions))
+		}
 	}
 
 	// Map medications using rules
-	drugs, err := m.mapWithRule(MedicationRule, doc.Medications, personID, visitMap)
-	if err != nil {
-		return nil, err
-	}
-	for _, d := range drugs {
-		data.DrugExposures = append(data.DrugExposures, m.toDrugExposure(d))
-	}
-	if m.verbose {
-		log.Printf("Mapped %d medications to %d drug records (rule-based)", len(doc.Medications), len(drugs))
+	if rule := m.getRuleBySection("Medications"); rule != nil {
+		drugs, err := m.mapWithRule(*rule, doc.Medications, personID, visitMap)
+		if err != nil {
+			return nil, err
+		}
+		for _, d := range drugs {
+			data.DrugExposures = append(data.DrugExposures, m.toDrugExposure(d))
+		}
+		if m.verbose {
+			log.Printf("Mapped %d medications to %d drug records (rule-based)", len(doc.Medications), len(drugs))
+		}
 	}
 
 	// Map immunizations using rules
-	imms, err := m.mapWithRule(ImmunizationRule, doc.Immunizations, personID, visitMap)
-	if err != nil {
-		return nil, err
-	}
-	for _, d := range imms {
-		data.DrugExposures = append(data.DrugExposures, m.toDrugExposure(d))
-	}
-	if m.verbose {
-		log.Printf("Mapped %d immunizations to %d drug records (rule-based)", len(doc.Immunizations), len(imms))
+	if rule := m.getRuleBySection("Immunizations"); rule != nil {
+		imms, err := m.mapWithRule(*rule, doc.Immunizations, personID, visitMap)
+		if err != nil {
+			return nil, err
+		}
+		for _, d := range imms {
+			data.DrugExposures = append(data.DrugExposures, m.toDrugExposure(d))
+		}
+		if m.verbose {
+			log.Printf("Mapped %d immunizations to %d drug records (rule-based)", len(doc.Immunizations), len(imms))
+		}
 	}
 
 	// Map procedures using rules
-	procs, err := m.mapWithRule(ProcedureRule, doc.Procedures, personID, visitMap)
-	if err != nil {
-		return nil, err
-	}
-	for _, p := range procs {
-		data.ProcedureOccurrences = append(data.ProcedureOccurrences, m.toProcedureOccurrence(p))
-	}
-	if m.verbose {
-		log.Printf("Mapped %d procedures to %d procedure records (rule-based)", len(doc.Procedures), len(procs))
+	if rule := m.getRuleBySection("Procedures"); rule != nil {
+		procs, err := m.mapWithRule(*rule, doc.Procedures, personID, visitMap)
+		if err != nil {
+			return nil, err
+		}
+		for _, p := range procs {
+			data.ProcedureOccurrences = append(data.ProcedureOccurrences, m.toProcedureOccurrence(p))
+		}
+		if m.verbose {
+			log.Printf("Mapped %d procedures to %d procedure records (rule-based)", len(doc.Procedures), len(procs))
+		}
 	}
 
 	// Map vital signs using rules
-	vitals, err := m.mapWithRule(VitalSignRule, doc.VitalSigns, personID, visitMap)
-	if err != nil {
-		return nil, err
-	}
-	for _, v := range vitals {
-		data.Measurements = append(data.Measurements, m.toMeasurement(v))
-	}
-	if m.verbose {
-		log.Printf("Mapped %d vital signs to %d measurement records (rule-based)", len(doc.VitalSigns), len(vitals))
+	if rule := m.getRuleBySection("VitalSigns"); rule != nil {
+		vitals, err := m.mapWithRule(*rule, doc.VitalSigns, personID, visitMap)
+		if err != nil {
+			return nil, err
+		}
+		for _, v := range vitals {
+			data.Measurements = append(data.Measurements, m.toMeasurement(v))
+		}
+		if m.verbose {
+			log.Printf("Mapped %d vital signs to %d measurement records (rule-based)", len(doc.VitalSigns), len(vitals))
+		}
 	}
 
 	// Map lab results using rules
-	labs, err := m.mapWithRule(LabResultRule, doc.LabResults, personID, visitMap)
-	if err != nil {
-		return nil, err
-	}
-	for _, l := range labs {
-		data.Measurements = append(data.Measurements, m.toMeasurement(l))
-	}
-	if m.verbose {
-		log.Printf("Mapped %d lab results to %d measurement records (rule-based)", len(doc.LabResults), len(labs))
+	if rule := m.getRuleBySection("LabResults"); rule != nil {
+		labs, err := m.mapWithRule(*rule, doc.LabResults, personID, visitMap)
+		if err != nil {
+			return nil, err
+		}
+		for _, l := range labs {
+			data.Measurements = append(data.Measurements, m.toMeasurement(l))
+		}
+		if m.verbose {
+			log.Printf("Mapped %d lab results to %d measurement records (rule-based)", len(doc.LabResults), len(labs))
+		}
 	}
 
 	// Map allergies using rules
-	allergies, err := m.mapWithRule(AllergyRule, doc.Allergies, personID, visitMap)
-	if err != nil {
-		return nil, err
-	}
-	for _, a := range allergies {
-		data.Observations = append(data.Observations, m.toObservation(a))
-	}
-	if m.verbose {
-		log.Printf("Mapped %d allergies to %d observation records (rule-based)", len(doc.Allergies), len(allergies))
+	if rule := m.getRuleBySection("Allergies"); rule != nil {
+		allergies, err := m.mapWithRule(*rule, doc.Allergies, personID, visitMap)
+		if err != nil {
+			return nil, err
+		}
+		for _, a := range allergies {
+			data.Observations = append(data.Observations, m.toObservation(a))
+		}
+		if m.verbose {
+			log.Printf("Mapped %d allergies to %d observation records (rule-based)", len(doc.Allergies), len(allergies))
+		}
 	}
 
 	// Map social observations using rules
-	socialObs, err := m.mapWithRule(SocialObservationRule, doc.Observations, personID, visitMap)
-	if err != nil {
-		return nil, err
-	}
-	for _, o := range socialObs {
-		data.Observations = append(data.Observations, m.toObservation(o))
-	}
-	if m.verbose {
-		log.Printf("Mapped %d social observations to %d observation records (rule-based)", len(doc.Observations), len(socialObs))
+	if rule := m.getRuleBySection("Observations"); rule != nil {
+		socialObs, err := m.mapWithRule(*rule, doc.Observations, personID, visitMap)
+		if err != nil {
+			return nil, err
+		}
+		for _, o := range socialObs {
+			data.Observations = append(data.Observations, m.toObservation(o))
+		}
+		if m.verbose {
+			log.Printf("Mapped %d social observations to %d observation records (rule-based)", len(doc.Observations), len(socialObs))
+		}
 	}
 
 	// Map devices using rules
-	devices, err := m.mapWithRule(DeviceRule, doc.Devices, personID, visitMap)
-	if err != nil {
-		return nil, err
-	}
-	for _, d := range devices {
-		data.DeviceExposures = append(data.DeviceExposures, m.toDeviceExposure(d))
-	}
-	if m.verbose {
-		log.Printf("Mapped %d devices to %d device records (rule-based)", len(doc.Devices), len(devices))
+	if rule := m.getRuleBySection("Devices"); rule != nil {
+		devices, err := m.mapWithRule(*rule, doc.Devices, personID, visitMap)
+		if err != nil {
+			return nil, err
+		}
+		for _, d := range devices {
+			data.DeviceExposures = append(data.DeviceExposures, m.toDeviceExposure(d))
+		}
+		if m.verbose {
+			log.Printf("Mapped %d devices to %d device records (rule-based)", len(doc.Devices), len(devices))
+		}
 	}
 
 	return data, nil
+}
+
+// getRuleBySection returns a rule by section name from the loaded rules
+func (m *RuleBasedMapper) getRuleBySection(section string) *MappingRule {
+	for i := range m.rules {
+		if m.rules[i].Source.Section == section {
+			return &m.rules[i]
+		}
+	}
+	return nil
 }
 
 // mapWithRule applies a rule to a slice of entries
