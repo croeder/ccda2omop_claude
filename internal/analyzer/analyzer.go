@@ -144,7 +144,7 @@ func (a *Analyzer) AnalyzeFile(filepath string) ([]CodeMapping, error) {
 
 	for _, section := range sectionDefinitions {
 		entries := xmlquery.Find(doc, section.RootXPath)
-		for entryIdx, entry := range entries {
+		for _, entry := range entries {
 			for _, codePath := range section.CodePaths {
 				// Find code elements within this entry
 				var codeNodes []*xmlquery.Node
@@ -154,7 +154,7 @@ func (a *Analyzer) AnalyzeFile(filepath string) ([]CodeMapping, error) {
 					codeNodes = xmlquery.Find(entry, codePath.CodeXPath)
 				}
 
-				for codeIdx, codeNode := range codeNodes {
+				for _, codeNode := range codeNodes {
 					code := codeNode.SelectAttr(codePath.CodeAttr)
 					if code == "" {
 						continue
@@ -163,10 +163,11 @@ func (a *Analyzer) AnalyzeFile(filepath string) ([]CodeMapping, error) {
 					codeSystem := codeNode.SelectAttr(codePath.CodeSystemAttr)
 					displayName := codeNode.SelectAttr(codePath.DisplayAttr)
 
-					// Build XPath for this specific code
-					xpath := fmt.Sprintf("%s[%d]/%s[%d]",
-						section.RootXPath, entryIdx+1,
-						codePath.CodeXPath, codeIdx+1)
+					// Build XPath for this code (without instance counts for cleaner output)
+					xpath := section.RootXPath
+					if codePath.CodeXPath != "" && codePath.CodeXPath != "." {
+						xpath = xpath + "/" + codePath.CodeXPath
+					}
 
 					mapping := a.mapCode(section.Name, xpath, code, codeSystem, displayName, codePath.Name)
 					mappings = append(mappings, mapping)
