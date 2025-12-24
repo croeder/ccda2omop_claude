@@ -51,3 +51,171 @@ Observations. I'd like to target OMOP CDM version 5.3. Please build placeholder 
 > commit the code 
 
 # in for $20/month pro subscription and another $5 so far.
+
+
+
+> how would you alter the design so that instead of having individual functions for each mapping, say from problems to conditions, there is one function that is data or rule driven? what form
+  woould the rules take? 
+
+
+ Great design question. Here's how I'd approach a rule-driven mapper:
+
+  Current Problem
+
+  Each mapping function has the same pattern:
+  1. Extract date from source
+  2. Look up concept IDs
+  3. Generate unique ID
+  4. Map fields to output struct
+
+  Proposed Rule Structure
+
+  mappings:
+    - name: problems_to_conditions
+      source:
+        section: Problems
+        entry_type: Problem
+      target:
+        table: condition_occurrence
+        type_concept_id: 32817  # EHR Problem List
+
+      fields:
+        - source: Code.Code
+          target: condition_concept_id
+          transform: vocabulary_lookup
+          vocab_field: Code.CodeSystem
+
+        - source: EffectiveTime.Low | EffectiveTime.Value
+          target: condition_start_date
+          transform: date
+
+        - source: EffectiveTime.High
+          target: condition_end_date
+          transform: date
+          optional: true
+
+        - source: Code
+          target: condition_source_value
+          transform: format_source_value
+
+      id_generation:
+        base_fields: [Code.Code, StartDate]
+
+    - name: vitals_to_measurements
+      source:
+        section: VitalSigns
+        entry_type: VitalSign
+      target:
+        table: measurement
+        type_concept_id: 32817
+
+      fields:
+        - source: Code.Code
+          target: measurement_concept_id
+          transform: vocabulary_lookup
+          vocab_field: Code.CodeSystem
+
+        - source: EffectiveTime
+          target: measurement_date
+          transform: date
+
+        - source: Value
+          target: value_as_number
+          transform: float
+
+        - source: Unit
+          target: unit_concept_id
+          transform: unit_lookup
+
+        - source: Unit
+          target: unit_source_value
+
+  Go Implementation
+
+  // Rule definitions
+  type MappingRule struct {
+      Name   string
+      Source SourceSpec
+      Target TargetSpec
+      Fields []FieldMapping
+      IDGen  IDGenSpec
+  }
+
+  type SourceSpec struct {
+      Section   string   // C-CDA section name
+      EntryType string   // Go struct type name
+  }
+
+  type TargetSpec struct {
+      Table         string // OMOP table name
+      TypeConceptID int64  // *_type_concept_id value
+  }
+
+  type FieldMapping struct {
+      Source    string   // Source field path (dot notation, | for fallback)
+      Target    string   // Target column name
+      Transform string   // none, date, float, vocabulary_lookup, unit_lookup, format_source_value
+      VocabField string  // For vocabulary lookups, field containing code system
+      Optional  bool
+  }
+
+  // Generic mapper
+  type RuleMapper struct {
+      rules       []MappingRule
+      vocab       *VocabularyMapper
+      transforms  map[string]TransformFunc
+  }
+
+  type TransformFunc func(value any, ctx *MappingContext) (any, error)
+
+  func (rm *RuleMapper) MapEntry(rule MappingRule, source any, personID int64) ([]map[string]any, error) {
+      // Use reflection to extract fields from source
+      // Apply transforms
+      // Handle multi-mapping (vocabulary returns slice)
+      // Return generic map that can be written to CSV
+  }
+
+  Benefits
+
+  1. Single mapping engine - One function handles all mappings
+  2. Configuration-driven - Add new mappings without code changes
+  3. Testable rules - Validate rules independently
+  4. Extensible transforms - Add new transform functions as needed
+  5. Self-documenting - Rules file serves as documentation
+
+  Trade-offs
+
+  | Approach            | Pros                         | Cons                                      |
+  |---------------------|------------------------------|-------------------------------------------|
+  | Current (functions) | Type-safe, IDE support, fast | Repetitive, code changes for new mappings |
+  | YAML/JSON rules     | Easy to modify, no recompile | No compile-time checks, slower            |
+  | Go struct tags      | Type-safe + declarative      | Still requires Go structs                 |
+  | DSL                 | Domain-specific syntax       | Learning curve, parser maintenance        |
+
+  Recommended Hybrid Approach
+
+  Keep Go structs for OMOP output (type safety), but use rules for:
+  1. Field extraction paths
+  2. Transform selection
+  3. Vocabulary lookup configuration
+
+  // Rules defined in Go (could be loaded from YAML)
+  var ConditionRule = MappingRule{
+      Source: SourceSpec{Section: "Problems"},
+      Target: TargetSpec{Table: "condition_occurrence", TypeConceptID: 32817},
+      Fields: []FieldMapping{
+          {Source: "Code.Code", Target: "condition_concept_id", Transform: "vocab", VocabField: "Code.CodeSystem"},
+          {Source: "EffectiveTime.Low|EffectiveTime.Value", Target: "condition_start_date", Transform: "date"},
+          // ...
+      },
+  }
+
+  Would you like me to implement this rule-driven approach?
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+>  
+─────────────────────────────────────────────────────────────────────
+
+
+
+# In fact, I've been build for $15 + $20 so far.
