@@ -1,0 +1,51 @@
+name: labs_to_measurements
+source:
+  section: LabResults
+  entry_type: LabResult
+target:
+  table: measurement
+  type_concept_id: 32817
+fields:
+  - source: Code.Code
+    target: measurement_concept_id
+    transform: vocab
+    vocab_field: Code.CodeSystem
+  - source: EffectiveTime
+    target: measurement_date
+    transform: date
+  - source: EffectiveTime
+    target: measurement_datetime
+    transform: time_ptr
+  - source: Code
+    target: measurement_source_value
+    transform: format_source
+  - source: Value
+    target: value_as_number
+    transform: float
+    optional: true
+  - source: Value|ValueString
+    target: value_source_value
+    transform: string
+    optional: true
+  - source: Unit
+    target: unit_source_value
+    transform: string
+    optional: true
+  - source: Unit
+    target: unit_concept_id
+    transform: unit
+    optional: true
+  - source: ReferenceRange.Low
+    target: range_low
+    transform: float
+    optional: true
+  - source: ReferenceRange.High
+    target: range_high
+    transform: float
+    optional: true
+id_gen:
+  base_fields:
+    - Code.Code
+    - EffectiveTime
+    - Value
+  generator: measurement

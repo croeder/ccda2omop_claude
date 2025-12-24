@@ -1,0 +1,38 @@
+name: devices_to_device_exposure
+source:
+  section: Devices
+  entry_type: Device
+target:
+  table: device_exposure
+  type_concept_id: 32817
+fields:
+  - source: Code.Code
+    target: device_concept_id
+    transform: vocab
+    vocab_field: Code.CodeSystem
+  - source: EffectiveTime.Low|EffectiveTime.Value
+    target: device_exposure_start_date
+    transform: date
+  - source: EffectiveTime.Low|EffectiveTime.Value
+    target: device_exposure_start_datetime
+    transform: time_ptr
+  - source: EffectiveTime.High
+    target: device_exposure_end_date
+    transform: time_ptr
+    optional: true
+  - source: EffectiveTime.High
+    target: device_exposure_end_datetime
+    transform: time_ptr
+    optional: true
+  - source: Code
+    target: device_source_value
+    transform: format_source
+  - source: UDI
+    target: unique_device_id
+    transform: string
+    optional: true
+id_gen:
+  base_fields:
+    - Code.Code
+    - EffectiveTime.Low
+  generator: device

@@ -3,6 +3,9 @@ package mapper
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"sort"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -48,13 +51,73 @@ type YAMLIDGenSpec struct {
 	Generator  string   `yaml:"generator"`
 }
 
-// LoadRulesFromYAML loads mapping rules from a YAML file
-func LoadRulesFromYAML(filename string) ([]MappingRule, error) {
+// LoadRulesFromYAML loads mapping rules from a YAML file or directory.
+// If path is a directory, it loads all .yaml/.yml files from that directory.
+// If path is a file, it loads rules from that single file (supports both
+// single-rule format and multi-rule format with "rules:" key).
+func LoadRulesFromYAML(path string) ([]MappingRule, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to access rules path: %w", err)
+	}
+
+	if info.IsDir() {
+		return loadRulesFromDirectory(path)
+	}
+	return loadRulesFromFile(path)
+}
+
+// loadRulesFromDirectory loads all YAML rule files from a directory
+func loadRulesFromDirectory(dir string) ([]MappingRule, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read rules directory: %w", err)
+	}
+
+	var rules []MappingRule
+	var filenames []string
+
+	// Collect and sort filenames for deterministic ordering
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if strings.HasSuffix(name, ".yaml") || strings.HasSuffix(name, ".yml") {
+			filenames = append(filenames, name)
+		}
+	}
+	sort.Strings(filenames)
+
+	// Load each file
+	for _, filename := range filenames {
+		filepath := filepath.Join(dir, filename)
+		fileRules, err := loadRulesFromFile(filepath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load %s: %w", filename, err)
+		}
+		rules = append(rules, fileRules...)
+	}
+
+	return rules, nil
+}
+
+// loadRulesFromFile loads rules from a single YAML file.
+// Supports both single-rule format (rule at top level) and
+// multi-rule format (rules under "rules:" key).
+func loadRulesFromFile(filename string) ([]MappingRule, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read rules file: %w", err)
 	}
 
+	// Try parsing as a single rule first (new format)
+	var singleRule YAMLRule
+	if err := yaml.Unmarshal(data, &singleRule); err == nil && singleRule.Name != "" {
+		return []MappingRule{convertYAMLRule(singleRule)}, nil
+	}
+
+	// Try parsing as multi-rule file (old format with "rules:" key)
 	var yamlFile YAMLRulesFile
 	if err := yaml.Unmarshal(data, &yamlFile); err != nil {
 		return nil, fmt.Errorf("failed to parse rules file: %w", err)

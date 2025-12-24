@@ -1,0 +1,38 @@
+name: social_to_observations
+source:
+  section: Observations
+  entry_type: SocialObservation
+target:
+  table: observation
+  type_concept_id: 32817
+fields:
+  - source: Code.Code
+    target: observation_concept_id
+    transform: vocab
+    vocab_field: Code.CodeSystem
+  - source: EffectiveTime.Low|EffectiveTime.Value
+    target: observation_date
+    transform: date
+  - source: EffectiveTime.Low|EffectiveTime.Value
+    target: observation_datetime
+    transform: time_ptr
+  - source: Code
+    target: observation_source_value
+    transform: format_source
+  - source: Value.DisplayName
+    target: value_as_string
+    transform: string
+    optional: true
+  - source: ValueQuantity.Value
+    target: value_as_number
+    transform: float
+    optional: true
+  - source: ValueQuantity.Unit
+    target: unit_source_value
+    transform: string
+    optional: true
+id_gen:
+  base_fields:
+    - Code.Code
+    - EffectiveTime.Low
+  generator: observation

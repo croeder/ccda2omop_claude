@@ -1,0 +1,38 @@
+name: allergies_to_observations
+source:
+  section: Allergies
+  entry_type: Allergy
+target:
+  table: observation
+  type_concept_id: 32817
+fields:
+  - source: Substance.Code|Code.Code
+    target: observation_concept_id
+    transform: vocab
+    vocab_field: Substance.CodeSystem|Code.CodeSystem
+    optional: true
+  - source: EffectiveTime.Low|EffectiveTime.Value
+    target: observation_date
+    transform: date
+    optional: true
+  - source: EffectiveTime.Low|EffectiveTime.Value
+    target: observation_datetime
+    transform: time_ptr
+    optional: true
+  - source: Substance|Code
+    target: observation_source_value
+    transform: format_source
+    optional: true
+  - source: Reaction.DisplayName
+    target: value_as_string
+    transform: string
+    optional: true
+  - source: Severity.DisplayName
+    target: qualifier_source_value
+    transform: string
+    optional: true
+id_gen:
+  base_fields:
+    - Substance.Code
+    - EffectiveTime.Low
+  generator: observation

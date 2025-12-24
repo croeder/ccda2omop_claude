@@ -1,0 +1,34 @@
+name: problems_to_conditions
+source:
+  section: Problems
+  entry_type: Problem
+target:
+  table: condition_occurrence
+  type_concept_id: 32817
+fields:
+  - source: Code.Code
+    target: condition_concept_id
+    transform: vocab
+    vocab_field: Code.CodeSystem
+  - source: EffectiveTime.Low|EffectiveTime.Value
+    target: condition_start_date
+    transform: date
+  - source: EffectiveTime.Low|EffectiveTime.Value
+    target: condition_start_datetime
+    transform: time_ptr
+  - source: EffectiveTime.High
+    target: condition_end_date
+    transform: time_ptr
+    optional: true
+  - source: EffectiveTime.High
+    target: condition_end_datetime
+    transform: time_ptr
+    optional: true
+  - source: Code
+    target: condition_source_value
+    transform: format_source
+id_gen:
+  base_fields:
+    - Code.Code
+    - EffectiveTime.Low
+  generator: condition

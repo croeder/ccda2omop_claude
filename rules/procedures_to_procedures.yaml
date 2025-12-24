@@ -1,0 +1,30 @@
+name: procedures_to_procedures
+source:
+  section: Procedures
+  entry_type: Procedure
+target:
+  table: procedure_occurrence
+  type_concept_id: 32817
+fields:
+  - source: Code.Code
+    target: procedure_concept_id
+    transform: vocab
+    vocab_field: Code.CodeSystem
+  - source: EffectiveTime.Low|EffectiveTime.Value
+    target: procedure_date
+    transform: date
+  - source: EffectiveTime.Low|EffectiveTime.Value
+    target: procedure_datetime
+    transform: time_ptr
+  - source: Code
+    target: procedure_source_value
+    transform: format_source
+  - source: TargetSite.DisplayName
+    target: modifier_source_value
+    transform: string
+    optional: true
+id_gen:
+  base_fields:
+    - Code.Code
+    - EffectiveTime.Low
+  generator: procedure

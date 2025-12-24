@@ -16,7 +16,7 @@ func main() {
 	conceptFile := flag.String("concept", "", "Path to OMOP CONCEPT.csv vocabulary file")
 	relationshipFile := flag.String("relationship", "", "Path to OMOP CONCEPT_RELATIONSHIP.csv file")
 	useRules := flag.Bool("rules", false, "Use rule-based mapper")
-	rulesFile := flag.String("rules-file", "", "Path to YAML rules file (implies -rules)")
+	rulesFile := flag.String("rules-file", "", "Path to YAML rules file or directory (implies -rules)")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "ccda2omop - Convert C-CDA XML documents to OMOP CDM 5.3 CSV files\n\n")

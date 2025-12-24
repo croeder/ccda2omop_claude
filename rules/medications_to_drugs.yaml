@@ -1,0 +1,61 @@
+name: medications_to_drugs
+source:
+  section: Medications
+  entry_type: Medication
+target:
+  table: drug_exposure
+  type_concept_id: 32817
+fields:
+  - source: Code.Code
+    target: drug_concept_id
+    transform: vocab
+    vocab_field: Code.CodeSystem
+  - source: EffectiveTime.Low|EffectiveTime.Value
+    target: drug_exposure_start_date
+    transform: date
+  - source: EffectiveTime.Low|EffectiveTime.Value
+    target: drug_exposure_start_datetime
+    transform: time_ptr
+  - source: EffectiveTime.High|EffectiveTime.Low|EffectiveTime.Value
+    target: drug_exposure_end_date
+    transform: date
+  - source: EffectiveTime.High|EffectiveTime.Low|EffectiveTime.Value
+    target: drug_exposure_end_datetime
+    transform: time_ptr
+  - source: Code
+    target: drug_source_value
+    transform: format_source
+  - source: RouteCode.DisplayName
+    target: route_source_value
+    transform: string
+    optional: true
+  - source: RouteCode.Code
+    target: route_concept_id
+    transform: route
+    vocab_field: RouteCode.CodeSystem
+    optional: true
+  - source: DoseQuantity.Value
+    target: quantity
+    transform: float
+    optional: true
+  - source: DoseQuantity.Unit
+    target: dose_unit_source_value
+    transform: string
+    optional: true
+  - source: DaysSupply
+    target: days_supply
+    transform: int
+    optional: true
+  - source: Refills
+    target: refills
+    transform: int
+    optional: true
+  - source: Instructions
+    target: sig
+    transform: string
+    optional: true
+id_gen:
+  base_fields:
+    - Code.Code
+    - EffectiveTime.Low
+  generator: drug
