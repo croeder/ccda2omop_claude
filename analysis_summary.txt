@@ -1,0 +1,95 @@
+2025/12/24 16:00:28 Loaded 1687274 concepts from vocabulary tables
+2025/12/24 16:00:28 Loaded 31 supplementary concepts from vocab/CPT4.csv
+2025/12/24 16:00:28 Loaded 20 supplementary concepts from vocab/CVX.csv
+2025/12/24 16:00:28 Loaded 2 supplementary concepts from vocab/HCPCS.csv
+
+================================================================================
+C-CDA to OMOP Mapping Summary
+================================================================================
+
+C-CDA Section: Allergies
+  Total codes: 2145, Mapped: 1008 (47.0%)
+  OMOP Tables:
+    → condition_occurrence      59 codes
+    → drug_exposure             945 codes
+    → observation               4 codes
+  Code Paths:
+    (root)                                   → drug_exposure (2072 codes)
+    @root='2.16.840.1.113883.10.20.22.4.9']/value → condition_occurrence, observation (73 codes)
+
+C-CDA Section: Immunizations
+  Total codes: 76, Mapped: 51 (67.1%)
+  OMOP Tables:
+    → drug_exposure             51 codes
+  Code Paths:
+    (root)                                   → drug_exposure (76 codes)
+
+C-CDA Section: LabResults
+  Total codes: 3015, Mapped: 2979 (98.8%)
+  OMOP Tables:
+    → measurement               2978 codes
+    → observation               1 codes
+  Code Paths:
+    (root)                                   → measurement, observation (3015 codes)
+
+C-CDA Section: MedicalEquipment
+  Total codes: 3, Mapped: 3 (100.0%)
+  OMOP Tables:
+    → device_exposure           3 codes
+  Code Paths:
+    (root)                                   → device_exposure (3 codes)
+
+C-CDA Section: Medications
+  Total codes: 2365, Mapped: 2008 (84.9%)
+  OMOP Tables:
+    → drug_exposure             2008 codes
+  Code Paths:
+    (root)                                   → drug_exposure (2365 codes)
+
+C-CDA Section: Problems
+  Total codes: 2570, Mapped: 2153 (83.8%)
+  OMOP Tables:
+    → condition_occurrence      2075 codes
+    → observation               78 codes
+  Code Paths:
+    (root)                                   → condition_occurrence, observation (2570 codes)
+
+C-CDA Section: Procedures
+  Total codes: 2483, Mapped: 2236 (90.1%)
+  OMOP Tables:
+    → condition_occurrence      49 codes
+    → measurement               133 codes
+    → observation               369 codes
+    → procedure_occurrence      1685 codes
+  Code Paths:
+    (root)                                   → condition_occurrence, measurement, observation, procedure_occurrence (2483 codes)
+
+C-CDA Section: SocialHistory
+  Total codes: 747, Mapped: 30 (4.0%)
+  OMOP Tables:
+    → observation               30 codes
+  Code Paths:
+    (root)                                   → observation (747 codes)
+
+C-CDA Section: VitalSigns
+  Total codes: 7010, Mapped: 6991 (99.7%)
+  OMOP Tables:
+    → measurement               6991 codes
+  Code Paths:
+    (root)                                   → measurement (7010 codes)
+
+================================================================================
+Overall Summary
+================================================================================
+
+Total C-CDA codes analyzed: 20414
+Successfully mapped: 17459 (85.5%)
+Unmapped: 2955 (14.5%)
+
+OMOP CDM Tables populated:
+  condition_occurrence           2183 records
+  device_exposure                3 records
+  drug_exposure                  3004 records
+  measurement                    10102 records
+  observation                    482 records
+  procedure_occurrence           1685 records
