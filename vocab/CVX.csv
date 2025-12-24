@@ -1,8 +1,8 @@
-# SYNTHETIC CVX VOCABULARY - NOT FOR PRODUCTION USE
+# SUPPLEMENTARY CVX VOCABULARY - NOT FOR PRODUCTION USE
 #
-# These are synthetic CVX concept entries created for demonstration purposes.
-# The concept_ids (2000000001+) are fabricated and do not correspond to official OMOP concept IDs.
-# The CVX codes themselves are real vaccine codes from the CDC, but this file is NOT an official vocabulary.
+# The CVX codes in this file are real vaccine codes from the CDC.
+# However, the concept_ids (2000000001+) are SYNTHETIC and do not correspond to official OMOP concept IDs.
+# This file was created for demonstration purposes and is NOT an official OMOP vocabulary.
 #
 # For production use, obtain the official CVX vocabulary from:
 #   - OMOP Athena (https://athena.ohdsi.org/)

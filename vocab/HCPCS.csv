@@ -1,7 +1,8 @@
-# SYNTHETIC HCPCS VOCABULARY - NOT FOR PRODUCTION USE
+# SUPPLEMENTARY HCPCS VOCABULARY - NOT FOR PRODUCTION USE
 #
-# These are synthetic HCPCS concept entries created for demonstration purposes.
-# The concept_ids (2200000001+) are fabricated and do not correspond to official OMOP concept IDs.
+# The HCPCS codes in this file are real procedure codes from CMS.
+# However, the concept_ids (2200000001+) are SYNTHETIC and do not correspond to official OMOP concept IDs.
+# This file was created for demonstration purposes and is NOT an official OMOP vocabulary.
 #
 # For production use, obtain the official HCPCS vocabulary from:
 #   - OMOP Athena (https://athena.ohdsi.org/)
