@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sample C-CDA document for testing ccda2omop converter -->
+<ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <realmCode code="US"/>
+  <typeId root="2.16.840.1.113883.1.3" extension="POCD_HD000040"/>
+  <templateId root="2.16.840.1.113883.10.20.22.1.1"/>
+
+  <id root="2.16.840.1.113883.19.5.99999.1" extension="DOC-12345"/>
+  <code code="34133-9" codeSystem="2.16.840.1.113883.6.1" displayName="Summarization of Episode Note"/>
+  <title>Sample CCD Document</title>
+  <effectiveTime value="20231215120000"/>
+
+  <recordTarget>
+    <patientRole>
+      <id root="2.16.840.1.113883.4.1" extension="123-45-6789"/>
+      <addr use="HP">
+        <streetAddressLine>123 Main Street</streetAddressLine>
+        <city>Anytown</city>
+        <state>CA</state>
+        <postalCode>90210</postalCode>
+        <country>US</country>
+      </addr>
+      <telecom use="HP" value="tel:+1-555-555-1234"/>
+      <patient>
+        <name use="L">
+          <given>John</given>
+          <given>Q</given>
+          <family>Public</family>
+        </name>
+        <administrativeGenderCode code="M" codeSystem="2.16.840.1.113883.5.1" displayName="Male"/>
+        <birthTime value="19800515"/>
+        <raceCode code="2106-3" codeSystem="2.16.840.1.113883.6.238" displayName="White"/>
+        <ethnicGroupCode code="2186-5" codeSystem="2.16.840.1.113883.6.238" displayName="Not Hispanic or Latino"/>
+        <languageCommunication>
+          <languageCode code="en"/>
+        </languageCommunication>
+      </patient>
+    </patientRole>
+  </recordTarget>
+
+  <author>
+    <time value="20231215120000"/>
+    <assignedAuthor>
+      <id root="2.16.840.1.113883.4.6" extension="1234567890"/>
+      <assignedPerson>
+        <name>
+          <given>Jane</given>
+          <family>Doctor</family>
+        </name>
+      </assignedPerson>
+      <representedOrganization>
+        <name>Sample Health System</name>
+      </representedOrganization>
+    </assignedAuthor>
+  </author>
+
+  <custodian>
+    <assignedCustodian>
+      <representedCustodianOrganization>
+        <id root="2.16.840.1.113883.4.6" extension="9876543210"/>
+        <name>Sample Health System</name>
+        <telecom use="WP" value="tel:+1-555-555-0000"/>
+        <addr>
+          <streetAddressLine>456 Hospital Drive</streetAddressLine>
+          <city>Anytown</city>
+          <state>CA</state>
+          <postalCode>90211</postalCode>
+        </addr>
+      </representedCustodianOrganization>
+    </assignedCustodian>
+  </custodian>
+
+  <component>
+    <structuredBody>
+      <!-- Encounters Section -->
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.22.1"/>
+          <code code="46240-8" codeSystem="2.16.840.1.113883.6.1" displayName="Encounters"/>
+          <title>Encounters</title>
+          <entry>
+            <encounter classCode="ENC" moodCode="EVN">
+              <id root="2.16.840.1.113883.19" extension="ENC-001"/>
+              <code code="AMB" codeSystem="2.16.840.1.113883.5.4" displayName="Ambulatory"/>
+              <effectiveTime>
+                <low value="20231201100000"/>
+                <high value="20231201110000"/>
+              </effectiveTime>
+              <performer>
+                <assignedEntity>
+                  <assignedPerson>
+                    <name>
+                      <given>Jane</given>
+                      <family>Doctor</family>
+                    </name>
+                  </assignedPerson>
+                </assignedEntity>
+              </performer>
+            </encounter>
+          </entry>
+        </section>
+      </component>
+
+      <!-- Problems Section -->
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.5.1"/>
+          <code code="11450-4" codeSystem="2.16.840.1.113883.6.1" displayName="Problem List"/>
+          <title>Problems</title>
+          <entry>
+            <act classCode="ACT" moodCode="EVN">
+              <id root="2.16.840.1.113883.19" extension="PROB-001"/>
+              <code code="CONC" codeSystem="2.16.840.1.113883.5.6"/>
+              <statusCode code="active"/>
+              <effectiveTime>
+                <low value="20230601"/>
+              </effectiveTime>
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN">
+                  <id root="2.16.840.1.113883.19" extension="OBS-001"/>
+                  <code code="64572001" codeSystem="2.16.840.1.113883.6.96" displayName="Condition"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime>
+                    <low value="20230601"/>
+                  </effectiveTime>
+                  <value xsi:type="CD" code="44054006" codeSystem="2.16.840.1.113883.6.96" displayName="Type 2 Diabetes Mellitus"/>
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+          <entry>
+            <act classCode="ACT" moodCode="EVN">
+              <id root="2.16.840.1.113883.19" extension="PROB-002"/>
+              <code code="CONC" codeSystem="2.16.840.1.113883.5.6"/>
+              <statusCode code="active"/>
+              <effectiveTime>
+                <low value="20220315"/>
+              </effectiveTime>
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN">
+                  <id root="2.16.840.1.113883.19" extension="OBS-002"/>
+                  <code code="64572001" codeSystem="2.16.840.1.113883.6.96" displayName="Condition"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime>
+                    <low value="20220315"/>
+                  </effectiveTime>
+                  <value xsi:type="CD" code="38341003" codeSystem="2.16.840.1.113883.6.96" displayName="Essential Hypertension"/>
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+        </section>
+      </component>
+
+      <!-- Medications Section -->
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.1.1"/>
+          <code code="10160-0" codeSystem="2.16.840.1.113883.6.1" displayName="Medications"/>
+          <title>Medications</title>
+          <entry>
+            <substanceAdministration classCode="SBADM" moodCode="EVN">
+              <id root="2.16.840.1.113883.19" extension="MED-001"/>
+              <statusCode code="active"/>
+              <effectiveTime xsi:type="IVL_TS">
+                <low value="20230601"/>
+              </effectiveTime>
+              <routeCode code="PO" codeSystem="2.16.840.1.113883.5.112" displayName="Oral"/>
+              <doseQuantity value="500" unit="mg"/>
+              <consumable>
+                <manufacturedProduct>
+                  <manufacturedMaterial>
+                    <code code="860975" codeSystem="2.16.840.1.113883.6.88" displayName="Metformin 500 MG Oral Tablet"/>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+            </substanceAdministration>
+          </entry>
+          <entry>
+            <substanceAdministration classCode="SBADM" moodCode="EVN">
+              <id root="2.16.840.1.113883.19" extension="MED-002"/>
+              <statusCode code="active"/>
+              <effectiveTime xsi:type="IVL_TS">
+                <low value="20220315"/>
+              </effectiveTime>
+              <routeCode code="PO" codeSystem="2.16.840.1.113883.5.112" displayName="Oral"/>
+              <doseQuantity value="10" unit="mg"/>
+              <consumable>
+                <manufacturedProduct>
+                  <manufacturedMaterial>
+                    <code code="314076" codeSystem="2.16.840.1.113883.6.88" displayName="Lisinopril 10 MG Oral Tablet"/>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+            </substanceAdministration>
+          </entry>
+        </section>
+      </component>
+
+      <!-- Vital Signs Section -->
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.4.1"/>
+          <code code="8716-3" codeSystem="2.16.840.1.113883.6.1" displayName="Vital Signs"/>
+          <title>Vital Signs</title>
+          <entry>
+            <organizer classCode="CLUSTER" moodCode="EVN">
+              <id root="2.16.840.1.113883.19" extension="VS-001"/>
+              <code code="46680005" codeSystem="2.16.840.1.113883.6.96" displayName="Vital Signs"/>
+              <statusCode code="completed"/>
+              <effectiveTime value="20231201100000"/>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <id root="2.16.840.1.113883.19" extension="VS-BP-SYS"/>
+                  <code code="8480-6" codeSystem="2.16.840.1.113883.6.1" displayName="Systolic Blood Pressure"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20231201100000"/>
+                  <value xsi:type="PQ" value="128" unit="mm[Hg]"/>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <id root="2.16.840.1.113883.19" extension="VS-BP-DIA"/>
+                  <code code="8462-4" codeSystem="2.16.840.1.113883.6.1" displayName="Diastolic Blood Pressure"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20231201100000"/>
+                  <value xsi:type="PQ" value="82" unit="mm[Hg]"/>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <id root="2.16.840.1.113883.19" extension="VS-HR"/>
+                  <code code="8867-4" codeSystem="2.16.840.1.113883.6.1" displayName="Heart Rate"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20231201100000"/>
+                  <value xsi:type="PQ" value="72" unit="/min"/>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <id root="2.16.840.1.113883.19" extension="VS-WT"/>
+                  <code code="29463-7" codeSystem="2.16.840.1.113883.6.1" displayName="Body Weight"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20231201100000"/>
+                  <value xsi:type="PQ" value="185" unit="[lb_av]"/>
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+        </section>
+      </component>
+
+      <!-- Results Section (Labs) -->
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.3.1"/>
+          <code code="30954-2" codeSystem="2.16.840.1.113883.6.1" displayName="Results"/>
+          <title>Laboratory Results</title>
+          <entry>
+            <organizer classCode="BATTERY" moodCode="EVN">
+              <id root="2.16.840.1.113883.19" extension="LAB-001"/>
+              <code code="4548-4" codeSystem="2.16.840.1.113883.6.1" displayName="Hemoglobin A1c"/>
+              <statusCode code="completed"/>
+              <effectiveTime value="20231115"/>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <id root="2.16.840.1.113883.19" extension="LAB-HBA1C"/>
+                  <code code="4548-4" codeSystem="2.16.840.1.113883.6.1" displayName="Hemoglobin A1c"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20231115"/>
+                  <value xsi:type="PQ" value="7.2" unit="%"/>
+                  <referenceRange>
+                    <observationRange>
+                      <text>4.0-5.6 %</text>
+                    </observationRange>
+                  </referenceRange>
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+          <entry>
+            <organizer classCode="BATTERY" moodCode="EVN">
+              <id root="2.16.840.1.113883.19" extension="LAB-002"/>
+              <code code="2345-7" codeSystem="2.16.840.1.113883.6.1" displayName="Glucose"/>
+              <statusCode code="completed"/>
+              <effectiveTime value="20231201"/>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <id root="2.16.840.1.113883.19" extension="LAB-GLU"/>
+                  <code code="2345-7" codeSystem="2.16.840.1.113883.6.1" displayName="Glucose"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime value="20231201"/>
+                  <value xsi:type="PQ" value="142" unit="mg/dL"/>
+                  <referenceRange>
+                    <observationRange>
+                      <text>70-100 mg/dL</text>
+                    </observationRange>
+                  </referenceRange>
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+        </section>
+      </component>
+
+      <!-- Allergies Section -->
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.6.1"/>
+          <code code="48765-2" codeSystem="2.16.840.1.113883.6.1" displayName="Allergies"/>
+          <title>Allergies and Adverse Reactions</title>
+          <entry>
+            <act classCode="ACT" moodCode="EVN">
+              <id root="2.16.840.1.113883.19" extension="ALLERGY-001"/>
+              <code code="48765-2" codeSystem="2.16.840.1.113883.6.1"/>
+              <statusCode code="active"/>
+              <effectiveTime>
+                <low value="20100101"/>
+              </effectiveTime>
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN">
+                  <id root="2.16.840.1.113883.19" extension="ALLERGY-OBS-001"/>
+                  <code code="ASSERTION" codeSystem="2.16.840.1.113883.5.4"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime>
+                    <low value="20100101"/>
+                  </effectiveTime>
+                  <value xsi:type="CD" code="419199007" codeSystem="2.16.840.1.113883.6.96" displayName="Allergy to substance"/>
+                  <participant typeCode="CSM">
+                    <participantRole classCode="MANU">
+                      <playingEntity classCode="MMAT">
+                        <code code="7980" codeSystem="2.16.840.1.113883.6.88" displayName="Penicillin"/>
+                      </playingEntity>
+                    </participantRole>
+                  </participant>
+                </observation>
+              </entryRelationship>
+            </act>
+          </entry>
+        </section>
+      </component>
+
+      <!-- Immunizations Section -->
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.2.1"/>
+          <code code="11369-6" codeSystem="2.16.840.1.113883.6.1" displayName="Immunizations"/>
+          <title>Immunizations</title>
+          <entry>
+            <substanceAdministration classCode="SBADM" moodCode="EVN">
+              <id root="2.16.840.1.113883.19" extension="IMM-001"/>
+              <statusCode code="completed"/>
+              <effectiveTime value="20231001"/>
+              <routeCode code="IM" codeSystem="2.16.840.1.113883.5.112" displayName="Intramuscular"/>
+              <doseQuantity value="0.5" unit="mL"/>
+              <consumable>
+                <manufacturedProduct>
+                  <manufacturedMaterial>
+                    <code code="141" codeSystem="2.16.840.1.113883.12.292" displayName="Influenza, seasonal, injectable"/>
+                    <lotNumberText>LOT-2023-FLU-456</lotNumberText>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+            </substanceAdministration>
+          </entry>
+        </section>
+      </component>
+
+      <!-- Procedures Section -->
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.7.1"/>
+          <code code="47519-4" codeSystem="2.16.840.1.113883.6.1" displayName="Procedures"/>
+          <title>Procedures</title>
+          <entry>
+            <procedure classCode="PROC" moodCode="EVN">
+              <id root="2.16.840.1.113883.19" extension="PROC-001"/>
+              <code code="73761001" codeSystem="2.16.840.1.113883.6.96" displayName="Colonoscopy"/>
+              <statusCode code="completed"/>
+              <effectiveTime value="20230815"/>
+              <performer>
+                <assignedEntity>
+                  <assignedPerson>
+                    <name>
+                      <given>Robert</given>
+                      <family>Specialist</family>
+                    </name>
+                  </assignedPerson>
+                </assignedEntity>
+              </performer>
+            </procedure>
+          </entry>
+        </section>
+      </component>
+
+      <!-- Medical Equipment (Devices) Section -->
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.23"/>
+          <code code="46264-8" codeSystem="2.16.840.1.113883.6.1" displayName="Medical Equipment"/>
+          <title>Medical Equipment</title>
+          <entry>
+            <supply classCode="SPLY" moodCode="EVN">
+              <id root="2.16.840.1.113883.19" extension="DEV-001"/>
+              <statusCode code="completed"/>
+              <effectiveTime>
+                <low value="20230601"/>
+              </effectiveTime>
+              <participant typeCode="DEV">
+                <participantRole classCode="MANU">
+                  <id root="2.16.840.1.113883.3.3719" extension="(01)00884838049032"/>
+                  <playingDevice>
+                    <code code="706689003" codeSystem="2.16.840.1.113883.6.96" displayName="Glucose monitor"/>
+                  </playingDevice>
+                </participantRole>
+              </participant>
+            </supply>
+          </entry>
+        </section>
+      </component>
+
+      <!-- Social History Section -->
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.17"/>
+          <code code="29762-2" codeSystem="2.16.840.1.113883.6.1" displayName="Social History"/>
+          <title>Social History</title>
+          <entry>
+            <observation classCode="OBS" moodCode="EVN">
+              <id root="2.16.840.1.113883.19" extension="SOCIAL-001"/>
+              <code code="72166-2" codeSystem="2.16.840.1.113883.6.1" displayName="Tobacco smoking status"/>
+              <statusCode code="completed"/>
+              <effectiveTime>
+                <low value="20150101"/>
+              </effectiveTime>
+              <value xsi:type="CD" code="8517006" codeSystem="2.16.840.1.113883.6.96" displayName="Former smoker"/>
+            </observation>
+          </entry>
+        </section>
+      </component>
+
+    </structuredBody>
+  </component>
+</ClinicalDocument>
