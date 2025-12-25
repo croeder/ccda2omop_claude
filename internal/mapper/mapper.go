@@ -153,6 +153,7 @@ func (m *Mapper) mapPerson(p ccda.Patient, personID int64) omop.Person {
 		GenderSourceValue:  p.Gender.DisplayName,
 		RaceSourceValue:    p.Race.DisplayName,
 		EthnicitySourceValue: p.Ethnicity.DisplayName,
+		MappingRule:        "DirectMapper:Person",
 	}
 
 	// Set month and day if available
@@ -190,6 +191,7 @@ func (m *Mapper) mapEncounter(enc ccda.Encounter, personID int64) omop.VisitOccu
 		VisitEndDatetime:   timePtr(endDate),
 		VisitTypeConceptID: ConceptEHREncounter,
 		VisitSourceValue:   enc.Code.DisplayName,
+		MappingRule:        "DirectMapper:Encounter",
 	}
 }
 
@@ -219,6 +221,7 @@ func (m *Mapper) mapProblem(prob ccda.Problem, personID int64, visitMap map[stri
 			ConditionStartDatetime: timePtr(startDate),
 			ConditionTypeConceptID: ConceptEHRProblemList,
 			ConditionSourceValue:   formatSourceValue(prob.Code),
+			MappingRule:            "DirectMapper:Problems",
 		}
 
 		if !prob.EffectiveTime.High.IsZero() {
@@ -268,6 +271,7 @@ func (m *Mapper) mapMedication(med ccda.Medication, personID int64, visitMap map
 			DrugTypeConceptID:         ConceptEHRPrescription,
 			DrugSourceValue:           formatSourceValue(med.Code),
 			RouteSourceValue:          med.RouteCode.DisplayName,
+			MappingRule:               "DirectMapper:Medications",
 		}
 
 		if med.DoseQuantity.Value != 0 {
@@ -328,6 +332,7 @@ func (m *Mapper) mapImmunization(imm ccda.Immunization, personID int64, visitMap
 			DrugSourceValue:           formatSourceValue(imm.Code),
 			LotNumber:                 imm.LotNumber,
 			RouteSourceValue:          imm.RouteCode.DisplayName,
+			MappingRule:               "DirectMapper:Immunizations",
 		}
 
 		if imm.DoseQuantity.Value != 0 {
@@ -376,6 +381,7 @@ func (m *Mapper) mapProcedure(proc ccda.Procedure, personID int64, visitMap map[
 			ProcedureTypeConceptID: ConceptEHRProcedure,
 			ProcedureSourceValue:   formatSourceValue(proc.Code),
 			ModifierSourceValue:    proc.TargetSite.DisplayName,
+			MappingRule:            "DirectMapper:Procedures",
 		})
 	}
 
@@ -414,6 +420,7 @@ func (m *Mapper) mapVitalSign(vital ccda.VitalSign, personID int64, visitMap map
 			MeasurementSourceValue:   formatSourceValue(vital.Code),
 			UnitSourceValue:          vital.Unit,
 			ValueSourceValue:         valueStr,
+			MappingRule:              "DirectMapper:VitalSigns",
 		}
 
 		if vital.Value != 0 {
@@ -463,6 +470,7 @@ func (m *Mapper) mapLabResult(lab ccda.LabResult, personID int64, visitMap map[s
 			MeasurementSourceValue:   formatSourceValue(lab.Code),
 			UnitSourceValue:          lab.Unit,
 			ValueSourceValue:         valueStr,
+			MappingRule:              "DirectMapper:LabResults",
 		}
 
 		if lab.Value != 0 {
@@ -517,6 +525,7 @@ func (m *Mapper) mapAllergy(allergy ccda.Allergy, personID int64, visitMap map[s
 			ObservationSourceValue:   formatSourceValue(allergy.Substance),
 			ValueAsString:            allergy.Reaction.DisplayName,
 			QualifierSourceValue:     allergy.Severity.DisplayName,
+			MappingRule:              "DirectMapper:Allergies",
 		}
 
 		observations = append(observations, obs)
@@ -553,6 +562,7 @@ func (m *Mapper) mapSocialObservation(socialObs ccda.SocialObservation, personID
 			ObservationDatetime:      timePtr(date),
 			ObservationTypeConceptID: ConceptEHRObservation,
 			ObservationSourceValue:   formatSourceValue(socialObs.Code),
+			MappingRule:              "DirectMapper:SocialHistory",
 		}
 
 		if socialObs.Value.Code != "" {
@@ -597,6 +607,7 @@ func (m *Mapper) mapDevice(dev ccda.Device, personID int64, visitMap map[string]
 			DeviceTypeConceptID:         ConceptEHRObservation,
 			UniqueDeviceID:              dev.UDI,
 			DeviceSourceValue:           formatSourceValue(dev.Code),
+			MappingRule:                 "DirectMapper:Devices",
 		}
 
 		if !dev.EffectiveTime.High.IsZero() {

@@ -226,6 +226,7 @@ func (m *RuleBasedMapper) toConditionOccurrence(record map[string]interface{}) o
 		ConditionConceptID:     getInt64(record, "condition_concept_id"),
 		ConditionTypeConceptID: getInt64(record, "condition_type_concept_id"),
 		ConditionSourceValue:   getString(record, "condition_source_value"),
+		MappingRule:            getString(record, "mapping_rule"),
 	}
 
 	if v, ok := record["condition_start_date"].(time.Time); ok {
@@ -255,6 +256,7 @@ func (m *RuleBasedMapper) toDrugExposure(record map[string]interface{}) omop.Dru
 		LotNumber:            getString(record, "lot_number"),
 		Sig:                  getString(record, "sig"),
 		DoseUnitSourceValue:  getString(record, "dose_unit_source_value"),
+		MappingRule:          getString(record, "mapping_rule"),
 	}
 
 	if v, ok := record["drug_exposure_start_date"].(time.Time); ok {
@@ -293,6 +295,7 @@ func (m *RuleBasedMapper) toProcedureOccurrence(record map[string]interface{}) o
 		ProcedureTypeConceptID: getInt64(record, "procedure_type_concept_id"),
 		ProcedureSourceValue:   getString(record, "procedure_source_value"),
 		ModifierSourceValue:    getString(record, "modifier_source_value"),
+		MappingRule:            getString(record, "mapping_rule"),
 	}
 
 	if v, ok := record["procedure_date"].(time.Time); ok {
@@ -314,6 +317,7 @@ func (m *RuleBasedMapper) toMeasurement(record map[string]interface{}) omop.Meas
 		MeasurementSourceValue:   getString(record, "measurement_source_value"),
 		UnitSourceValue:          getString(record, "unit_source_value"),
 		ValueSourceValue:         getString(record, "value_source_value"),
+		MappingRule:              getString(record, "mapping_rule"),
 	}
 
 	if v, ok := record["measurement_date"].(time.Time); ok {
@@ -348,6 +352,7 @@ func (m *RuleBasedMapper) toObservation(record map[string]interface{}) omop.Obse
 		ValueAsString:            getString(record, "value_as_string"),
 		QualifierSourceValue:     getString(record, "qualifier_source_value"),
 		UnitSourceValue:          getString(record, "unit_source_value"),
+		MappingRule:              getString(record, "mapping_rule"),
 	}
 
 	if v, ok := record["observation_date"].(time.Time); ok {
@@ -371,6 +376,7 @@ func (m *RuleBasedMapper) toDeviceExposure(record map[string]interface{}) omop.D
 		DeviceTypeConceptID: getInt64(record, "device_type_concept_id"),
 		UniqueDeviceID:      getString(record, "unique_device_id"),
 		DeviceSourceValue:   getString(record, "device_source_value"),
+		MappingRule:         getString(record, "mapping_rule"),
 	}
 
 	if v, ok := record["device_exposure_start_date"].(time.Time); ok {
@@ -402,6 +408,7 @@ func (m *RuleBasedMapper) mapPerson(p ccda.Patient, personID int64) omop.Person 
 		GenderSourceValue:    p.Gender.DisplayName,
 		RaceSourceValue:      p.Race.DisplayName,
 		EthnicitySourceValue: p.Ethnicity.DisplayName,
+		MappingRule:          "RuleMapper:Person",
 	}
 
 	if !p.BirthTime.IsZero() {
@@ -438,6 +445,7 @@ func (m *RuleBasedMapper) mapEncounter(enc ccda.Encounter, personID int64) omop.
 		VisitEndDatetime:   timePtrHelper(endDate),
 		VisitTypeConceptID: ConceptEHREncounter,
 		VisitSourceValue:   enc.Code.DisplayName,
+		MappingRule:        "RuleMapper:Encounter",
 	}
 }
 

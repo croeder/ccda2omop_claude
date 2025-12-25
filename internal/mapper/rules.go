@@ -207,6 +207,9 @@ func (re *RuleEngine) MapEntry(rule MappingRule, source interface{}, personID in
 			}
 		}
 
+		// Add the rule name for traceability
+		record["mapping_rule"] = "RuleMapper:" + rule.Name
+
 		results = append(results, record)
 	}
 
