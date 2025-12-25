@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ccda2omop/internal/ccda"
 	"github.com/ccda2omop/internal/mapper"
@@ -19,6 +20,7 @@ type Config struct {
 	Verbose          bool
 	ConceptFile      string // Path to CONCEPT.csv
 	RelationshipFile string // Path to CONCEPT_RELATIONSHIP.csv
+	VocabDir         string // Path to directory with supplementary vocabulary files (e.g., CVX.csv)
 	UseRules         bool   // Use rule-based mapper instead of hardcoded mapper
 	RulesFile        string // Path to YAML rules file (optional, uses Go-defined rules if empty)
 }
@@ -27,7 +29,7 @@ type Config struct {
 var sharedVocabLoader *mapper.VocabLoader
 
 // LoadVocabulary loads vocabulary files and caches them for reuse
-func LoadVocabulary(conceptFile, relationshipFile string, verbose bool) error {
+func LoadVocabulary(conceptFile, relationshipFile, vocabDir string, verbose bool) error {
 	if sharedVocabLoader != nil {
 		return nil // Already loaded
 	}
@@ -55,7 +57,36 @@ func LoadVocabulary(conceptFile, relationshipFile string, verbose bool) error {
 		}
 	}
 
+	// Load supplementary vocabularies from directory if provided
+	if vocabDir != "" {
+		if err := loadSupplementaryVocabs(loader, vocabDir, verbose); err != nil {
+			return fmt.Errorf("failed to load supplementary vocabularies: %w", err)
+		}
+	}
+
 	sharedVocabLoader = loader
+	return nil
+}
+
+// loadSupplementaryVocabs loads all CSV files from a directory as supplementary vocabularies
+func loadSupplementaryVocabs(vocabLoader *mapper.VocabLoader, dir string, verbose bool) error {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return fmt.Errorf("failed to read vocab directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if strings.HasSuffix(strings.ToLower(name), ".csv") {
+			filePath := filepath.Join(dir, name)
+			if err := vocabLoader.LoadSupplementaryVocab(filePath); err != nil {
+				return fmt.Errorf("failed to load %s: %w", name, err)
+			}
+		}
+	}
 	return nil
 }
 
@@ -63,7 +94,7 @@ func LoadVocabulary(conceptFile, relationshipFile string, verbose bool) error {
 func RunBatch(files []string, cfg Config) error {
 	// Load vocabulary if specified and not already loaded
 	if cfg.ConceptFile != "" && sharedVocabLoader == nil {
-		if err := LoadVocabulary(cfg.ConceptFile, cfg.RelationshipFile, cfg.Verbose); err != nil {
+		if err := LoadVocabulary(cfg.ConceptFile, cfg.RelationshipFile, cfg.VocabDir, cfg.Verbose); err != nil {
 			return err
 		}
 	}
@@ -182,7 +213,7 @@ func processFile(inputFile string, cfg Config) (*omop.OMOPData, error) {
 func Run(cfg Config) error {
 	// Load vocabulary if specified and not already loaded
 	if cfg.ConceptFile != "" && sharedVocabLoader == nil {
-		if err := LoadVocabulary(cfg.ConceptFile, cfg.RelationshipFile, cfg.Verbose); err != nil {
+		if err := LoadVocabulary(cfg.ConceptFile, cfg.RelationshipFile, cfg.VocabDir, cfg.Verbose); err != nil {
 			return err
 		}
 	}

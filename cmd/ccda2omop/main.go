@@ -87,6 +87,7 @@ func main() {
 		Verbose:          *verbose,
 		ConceptFile:      *conceptFile,
 		RelationshipFile: *relationshipFile,
+		VocabDir:         *vocabDir,
 		UseRules:         *useRules || *rulesFile != "",
 		RulesFile:        *rulesFile,
 	}
