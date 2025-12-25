@@ -1,3 +1,5 @@
+// Copyright 2025 Christophe Roeder. All rights reserved.
+
 package mapper
 
 // VocabularyMapper provides concept mappings for OMOP using loaded vocabulary tables.

@@ -1,3 +1,5 @@
+Copyright 2025 Christophe Roeder. All rights reserved.
+
 # CCDA2OMOP_Claude is an experiment using Claude Code to write a CCDA to OMOP converter.
 
 ## All test data here is Synthetic

@@ -1,3 +1,5 @@
+// Copyright 2025 Christophe Roeder. All rights reserved.
+
 package mapper
 
 // Mapping rules for C-CDA to OMOP CDM conversion
