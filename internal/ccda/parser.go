@@ -337,6 +337,11 @@ func parseEncounters(section *xmlquery.Node) []Encounter {
 
 	entries := xmlquery.Find(section, "entry/encounter")
 	for _, enc := range entries {
+		// Only include actual events (moodCode=EVN) with completed/active status
+		if !shouldIncludeEntry(enc) {
+			continue
+		}
+
 		encounter := Encounter{
 			ID:            getID(enc),
 			Code:          parseCode(xmlquery.FindOne(enc, "code")),
@@ -366,6 +371,11 @@ func parseProblems(section *xmlquery.Node) []Problem {
 	// Problems are in act/entryRelationship/observation
 	observations := xmlquery.Find(section, "entry/act/entryRelationship/observation")
 	for _, obs := range observations {
+		// Only include actual events (moodCode=EVN) with completed/active status
+		if !shouldIncludeEntry(obs) {
+			continue
+		}
+
 		problem := Problem{
 			ID:            getID(obs),
 			EffectiveTime: parseEffectiveTime(xmlquery.FindOne(obs, "effectiveTime")),
@@ -390,6 +400,11 @@ func parseMedications(section *xmlquery.Node) []Medication {
 
 	entries := xmlquery.Find(section, "entry/substanceAdministration")
 	for _, sa := range entries {
+		// Only include actual events (moodCode=EVN) with completed/active status
+		if !shouldIncludeEntry(sa) {
+			continue
+		}
+
 		med := Medication{
 			ID:           getID(sa),
 			Status:       parseCode(xmlquery.FindOne(sa, "statusCode")),
@@ -432,6 +447,11 @@ func parseProcedures(section *xmlquery.Node) []Procedure {
 
 	entries := xmlquery.Find(section, "entry/procedure")
 	for _, proc := range entries {
+		// Only include actual events (moodCode=EVN) with completed/active status
+		if !shouldIncludeEntry(proc) {
+			continue
+		}
+
 		procedure := Procedure{
 			ID:            getID(proc),
 			Code:          parseCode(xmlquery.FindOne(proc, "code")),
@@ -457,6 +477,11 @@ func parseVitalSigns(section *xmlquery.Node) []VitalSign {
 	// Vital signs are in organizer/component/observation
 	observations := xmlquery.Find(section, "entry/organizer/component/observation")
 	for _, obs := range observations {
+		// Only include actual events (moodCode=EVN) with completed/active status
+		if !shouldIncludeEntry(obs) {
+			continue
+		}
+
 		vital := VitalSign{
 			ID:             getID(obs),
 			Code:           parseCode(xmlquery.FindOne(obs, "code")),
@@ -484,6 +509,11 @@ func parseLabResults(section *xmlquery.Node) []LabResult {
 	// Lab results are in organizer/component/observation
 	observations := xmlquery.Find(section, "entry/organizer/component/observation")
 	for _, obs := range observations {
+		// Only include actual events (moodCode=EVN) with completed/active status
+		if !shouldIncludeEntry(obs) {
+			continue
+		}
+
 		result := LabResult{
 			ID:             getID(obs),
 			Code:           parseCode(xmlquery.FindOne(obs, "code")),
@@ -529,6 +559,11 @@ func parseAllergies(section *xmlquery.Node) []Allergy {
 	// Allergies are in act/entryRelationship/observation
 	observations := xmlquery.Find(section, "entry/act/entryRelationship/observation")
 	for _, obs := range observations {
+		// Only include actual events (moodCode=EVN) with completed/active status
+		if !shouldIncludeEntry(obs) {
+			continue
+		}
+
 		allergy := Allergy{
 			ID:            getID(obs),
 			EffectiveTime: parseEffectiveTime(xmlquery.FindOne(obs, "effectiveTime")),
@@ -554,6 +589,11 @@ func parseImmunizations(section *xmlquery.Node) []Immunization {
 
 	entries := xmlquery.Find(section, "entry/substanceAdministration")
 	for _, sa := range entries {
+		// Only include actual events (moodCode=EVN) with completed/active status
+		if !shouldIncludeEntry(sa) {
+			continue
+		}
+
 		imm := Immunization{
 			ID:           getID(sa),
 			Status:       parseCode(xmlquery.FindOne(sa, "statusCode")),
@@ -587,6 +627,11 @@ func parseDevices(section *xmlquery.Node) []Device {
 
 	entries := xmlquery.Find(section, "entry/supply")
 	for _, sup := range entries {
+		// Only include actual events (moodCode=EVN) with completed/active status
+		if !shouldIncludeEntry(sup) {
+			continue
+		}
+
 		device := Device{
 			ID:            getID(sup),
 			EffectiveTime: parseEffectiveTime(xmlquery.FindOne(sup, "effectiveTime")),
@@ -617,6 +662,11 @@ func parseSocialHistory(section *xmlquery.Node) []SocialObservation {
 
 	entries := xmlquery.Find(section, "entry/observation")
 	for _, obs := range entries {
+		// Only include actual events (moodCode=EVN) with completed/active status
+		if !shouldIncludeEntry(obs) {
+			continue
+		}
+
 		socialObs := SocialObservation{
 			ID:            getID(obs),
 			Code:          parseCode(xmlquery.FindOne(obs, "code")),
@@ -644,6 +694,41 @@ func parseSocialHistory(section *xmlquery.Node) []SocialObservation {
 }
 
 // ============ Helper Functions ============
+
+// isActualEvent checks if an entry has moodCode="EVN" (event/actual occurrence)
+// Only EVN entries represent things that actually happened.
+// Other moodCodes like INT (intent), RQO (request), PRMS (promise) represent plans.
+func isActualEvent(node *xmlquery.Node) bool {
+	if node == nil {
+		return false
+	}
+	moodCode := attr(node, "moodCode")
+	// EVN = Event (actual occurrence)
+	// Empty moodCode defaults to EVN for observations
+	return moodCode == "EVN" || moodCode == ""
+}
+
+// hasCompletedStatus checks if an entry has a status that indicates completion.
+// Valid statuses: "completed", "active" (ongoing events that have started)
+// Invalid statuses: "cancelled", "aborted", "new", "held", "suspended", "nullified"
+func hasCompletedStatus(node *xmlquery.Node) bool {
+	if node == nil {
+		return true // No node means no status restriction
+	}
+	statusNode := xmlquery.FindOne(node, "statusCode")
+	if statusNode == nil {
+		return true // No status code means we accept it
+	}
+	status := attr(statusNode, "code")
+	// Accept completed and active (in-progress events that have started)
+	return status == "completed" || status == "active" || status == ""
+}
+
+// shouldIncludeEntry checks both moodCode and statusCode to determine
+// if an entry represents an actual event that occurred
+func shouldIncludeEntry(node *xmlquery.Node) bool {
+	return isActualEvent(node) && hasCompletedStatus(node)
+}
 
 // attr safely gets an attribute value from a node
 func attr(node *xmlquery.Node, name string) string {
