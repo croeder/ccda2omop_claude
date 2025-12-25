@@ -339,6 +339,9 @@ func (m *RuleBasedMapper) toMeasurement(record map[string]interface{}) omop.Meas
 	if v := getFloat64Ptr(record, "value_as_number"); v != nil {
 		meas.ValueAsNumber = v
 	}
+	if v := getInt64Ptr(record, "value_as_concept_id"); v != nil {
+		meas.ValueAsConceptID = v
+	}
 	if v := getInt64Ptr(record, "unit_concept_id"); v != nil {
 		meas.UnitConceptID = v
 	}
@@ -373,6 +376,9 @@ func (m *RuleBasedMapper) toObservation(record map[string]interface{}) omop.Obse
 	}
 	if v := getFloat64Ptr(record, "value_as_number"); v != nil {
 		obs.ValueAsNumber = v
+	}
+	if v := getInt64Ptr(record, "value_as_concept_id"); v != nil {
+		obs.ValueAsConceptID = v
 	}
 
 	return obs

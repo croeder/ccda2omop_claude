@@ -137,6 +137,7 @@ var (
 			{Source: "Unit", Target: "unit_source_value", Transform: "string", Optional: true},
 			{Source: "Unit", Target: "unit_concept_id", Transform: "unit", Optional: true},
 			{Source: "Value", Target: "value_source_value", Transform: "string", Optional: true},
+			{Source: "Interpretation.Code", Target: "value_as_concept_id", Transform: "value_vocab", VocabField: "Interpretation.CodeSystem", Optional: true},
 		},
 		IDGen: IDGenSpec{
 			BaseFields: []string{"Code.Code", "EffectiveTime", "Value"},
@@ -166,6 +167,7 @@ var (
 			{Source: "Unit", Target: "unit_concept_id", Transform: "unit", Optional: true},
 			{Source: "ReferenceRange.Low", Target: "range_low", Transform: "float", Optional: true},
 			{Source: "ReferenceRange.High", Target: "range_high", Transform: "float", Optional: true},
+			{Source: "Interpretation.Code", Target: "value_as_concept_id", Transform: "value_vocab", VocabField: "Interpretation.CodeSystem", Optional: true},
 		},
 		IDGen: IDGenSpec{
 			BaseFields: []string{"Code.Code", "EffectiveTime", "Value"},
@@ -190,6 +192,7 @@ var (
 			{Source: "EffectiveTime.Low|EffectiveTime.Value", Target: "observation_datetime", Transform: "time_ptr", Optional: true},
 			{Source: "Substance|Code", Target: "observation_source_value", Transform: "format_source", Optional: true},
 			{Source: "Reaction.DisplayName", Target: "value_as_string", Transform: "string", Optional: true},
+			{Source: "Reaction.Code", Target: "value_as_concept_id", Transform: "value_vocab", VocabField: "Reaction.CodeSystem", Optional: true},
 			{Source: "Severity.DisplayName", Target: "qualifier_source_value", Transform: "string", Optional: true},
 		},
 		IDGen: IDGenSpec{
@@ -215,6 +218,7 @@ var (
 			{Source: "EffectiveTime.Low|EffectiveTime.Value", Target: "observation_datetime", Transform: "time_ptr"},
 			{Source: "Code", Target: "observation_source_value", Transform: "format_source"},
 			{Source: "Value.DisplayName", Target: "value_as_string", Transform: "string", Optional: true},
+			{Source: "Value.Code", Target: "value_as_concept_id", Transform: "value_vocab", VocabField: "Value.CodeSystem", Optional: true},
 			{Source: "ValueQuantity.Value", Target: "value_as_number", Transform: "float", Optional: true},
 			{Source: "ValueQuantity.Unit", Target: "unit_source_value", Transform: "string", Optional: true},
 		},

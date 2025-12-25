@@ -300,6 +300,38 @@ func (v *VocabularyMapper) MapRouteCode(code, codeSystem string) int64 {
 	return v.vocabLoader.GetStandardConceptID(vocabID, code)
 }
 
+// MapObservationValueCode maps a coded observation value (e.g., smoking status value) to an OMOP concept ID
+// This is used for value_as_concept_id in the OBSERVATION table
+func (v *VocabularyMapper) MapObservationValueCode(code, codeSystem string) int64 {
+	if v.vocabLoader == nil || code == "" {
+		return ConceptNoMapping
+	}
+
+	vocabID := OIDToVocabularyID(codeSystem)
+	if vocabID == "" {
+		// Default to SNOMED for observation values
+		vocabID = "SNOMED"
+	}
+
+	return v.vocabLoader.GetStandardConceptID(vocabID, code)
+}
+
+// MapMeasurementValueCode maps a coded measurement value (e.g., interpretation code) to an OMOP concept ID
+// This is used for value_as_concept_id in the MEASUREMENT table
+func (v *VocabularyMapper) MapMeasurementValueCode(code, codeSystem string) int64 {
+	if v.vocabLoader == nil || code == "" {
+		return ConceptNoMapping
+	}
+
+	vocabID := OIDToVocabularyID(codeSystem)
+	if vocabID == "" {
+		// Default to SNOMED for measurement values
+		vocabID = "SNOMED"
+	}
+
+	return v.vocabLoader.GetStandardConceptID(vocabID, code)
+}
+
 // GetCodeSystemName returns a human-readable name for a code system OID
 func GetCodeSystemName(oid string) string {
 	switch oid {

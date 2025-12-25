@@ -432,6 +432,14 @@ func (m *Mapper) mapVitalSign(vital ccda.VitalSign, personID int64, visitMap map
 			meas.UnitConceptID = &unitID
 		}
 
+		// Map interpretation code to value_as_concept_id if present
+		if vital.Interpretation.Code != "" {
+			interpConceptID := m.vocab.MapMeasurementValueCode(vital.Interpretation.Code, vital.Interpretation.CodeSystem)
+			if interpConceptID != 0 {
+				meas.ValueAsConceptID = &interpConceptID
+			}
+		}
+
 		measurements = append(measurements, meas)
 	}
 
@@ -489,6 +497,14 @@ func (m *Mapper) mapLabResult(lab ccda.LabResult, personID int64, visitMap map[s
 			meas.RangeHigh = &lab.ReferenceRange.High
 		}
 
+		// Map interpretation code to value_as_concept_id if present
+		if lab.Interpretation.Code != "" {
+			interpConceptID := m.vocab.MapMeasurementValueCode(lab.Interpretation.Code, lab.Interpretation.CodeSystem)
+			if interpConceptID != 0 {
+				meas.ValueAsConceptID = &interpConceptID
+			}
+		}
+
 		measurements = append(measurements, meas)
 	}
 
@@ -526,6 +542,14 @@ func (m *Mapper) mapAllergy(allergy ccda.Allergy, personID int64, visitMap map[s
 			ValueAsString:            allergy.Reaction.DisplayName,
 			QualifierSourceValue:     allergy.Severity.DisplayName,
 			MappingRule:              "DirectMapper:Allergies",
+		}
+
+		// Map reaction code to value_as_concept_id if present
+		if allergy.Reaction.Code != "" {
+			reactionConceptID := m.vocab.MapObservationValueCode(allergy.Reaction.Code, allergy.Reaction.CodeSystem)
+			if reactionConceptID != 0 {
+				obs.ValueAsConceptID = &reactionConceptID
+			}
 		}
 
 		observations = append(observations, obs)
@@ -566,6 +590,11 @@ func (m *Mapper) mapSocialObservation(socialObs ccda.SocialObservation, personID
 		}
 
 		if socialObs.Value.Code != "" {
+			// Map coded value to concept ID
+			valueConceptID := m.vocab.MapObservationValueCode(socialObs.Value.Code, socialObs.Value.CodeSystem)
+			if valueConceptID != 0 {
+				obs.ValueAsConceptID = &valueConceptID
+			}
 			obs.ValueAsString = socialObs.Value.DisplayName
 		} else if socialObs.ValueQuantity.Value != 0 {
 			obs.ValueAsNumber = &socialObs.ValueQuantity.Value

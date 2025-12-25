@@ -86,6 +86,7 @@ func NewRuleEngine(vocab *VocabularyMapper, verbose bool) *RuleEngine {
 	re.transforms["route"] = re.transformRoute
 	re.transforms["format_source"] = transformFormatSource
 	re.transforms["time_ptr"] = transformTimePtr
+	re.transforms["value_vocab"] = re.transformValueVocab
 
 	return re
 }
@@ -491,6 +492,29 @@ func (re *RuleEngine) transformRoute(value interface{}, fm FieldMapping, ctx *Ma
 	}
 
 	return re.vocab.MapRouteCode(code, codeSystem), nil
+}
+
+// transformValueVocab maps a coded value (e.g., observation value, interpretation) to an OMOP concept ID
+// This is used for value_as_concept_id fields in MEASUREMENT and OBSERVATION tables
+func (re *RuleEngine) transformValueVocab(value interface{}, fm FieldMapping, ctx *MappingContext) (interface{}, error) {
+	code, ok := value.(string)
+	if !ok || code == "" {
+		return nil, nil
+	}
+
+	codeSystem := ""
+	if fm.VocabField != "" {
+		if cs, err := re.extractValue(ctx.Source, fm.VocabField); err == nil {
+			codeSystem, _ = cs.(string)
+		}
+	}
+
+	// Use the appropriate mapper based on target field
+	conceptID := re.vocab.MapObservationValueCode(code, codeSystem)
+	if conceptID == 0 {
+		return nil, nil
+	}
+	return conceptID, nil
 }
 
 func transformFormatSource(value interface{}, fm FieldMapping, ctx *MappingContext) (interface{}, error) {
