@@ -1,4 +1,6 @@
 
+Copyright 2025 Christophe Roeder. All rights reserved.
+
 2025-12-24
 > I'd like to start a project to convert HL7 C-CDA documents to rows in OHDSI OMOP tables. 
 
