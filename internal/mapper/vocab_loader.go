@@ -325,8 +325,10 @@ func (vl *VocabLoader) LoadSupplementaryVocab(filepath string) error {
 }
 
 // OIDToVocabularyID maps C-CDA code system OIDs to OMOP vocabulary IDs
+// Also accepts direct vocabulary names (e.g., "CPT4", "SNOMED") and returns them as-is
 func OIDToVocabularyID(oid string) string {
 	switch oid {
+	// Standard OIDs
 	case "2.16.840.1.113883.6.96":
 		return "SNOMED"
 	case "2.16.840.1.113883.6.88":
@@ -346,6 +348,25 @@ func OIDToVocabularyID(oid string) string {
 	case "2.16.840.1.113883.6.59": // Alternate CVX OID
 		return "CVX"
 	case "2.16.840.1.113883.6.69":
+		return "NDC"
+	// Direct vocabulary names (some C-CDA files use these instead of OIDs)
+	case "SNOMED", "SNOMED CT", "SNOMEDCT":
+		return "SNOMED"
+	case "RxNorm":
+		return "RxNorm"
+	case "LOINC":
+		return "LOINC"
+	case "ICD10CM", "ICD-10-CM", "ICD10":
+		return "ICD10CM"
+	case "ICD9CM", "ICD-9-CM", "ICD9":
+		return "ICD9CM"
+	case "CPT4", "CPT", "CPT-4":
+		return "CPT4"
+	case "HCPCS":
+		return "HCPCS"
+	case "CVX":
+		return "CVX"
+	case "NDC":
 		return "NDC"
 	default:
 		return ""

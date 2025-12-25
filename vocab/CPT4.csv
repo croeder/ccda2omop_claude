@@ -42,3 +42,29 @@ concept_id	concept_name	domain_id	vocabulary_id	concept_class_id	standard_concep
 2100000029	Unlisted chemotherapy procedure	Procedure	CPT4	CPT4	S	96549	19700101	20991231
 2100000030	Medical nutrition therapy, individual	Procedure	CPT4	CPT4	S	97802	19700101	20991231
 2100000031	Smoking cessation counseling, 3-10 min	Procedure	CPT4	CPT4	S	99406	19700101	20991231
+2100000032	Collection of venous blood by venipuncture	Procedure	CPT4	CPT4	S	36415	19700101	20991231
+2100000033	Colonoscopy with polypectomy	Procedure	CPT4	CPT4	S	45385	19700101	20991231
+2100000034	Endometrial sampling (biopsy)	Procedure	CPT4	CPT4	S	58100	19700101	20991231
+2100000035	Laparoscopic total hysterectomy	Procedure	CPT4	CPT4	S	58571	19700101	20991231
+2100000036	Basic metabolic panel	Procedure	CPT4	CPT4	S	80048	19700101	20991231
+2100000037	Comprehensive metabolic panel	Procedure	CPT4	CPT4	S	80053	19700101	20991231
+2100000038	Urinalysis dip stick without microscopy	Procedure	CPT4	CPT4	S	81002	19700101	20991231
+2100000039	Urine pregnancy test	Procedure	CPT4	CPT4	S	81025	19700101	20991231
+2100000040	BCR/ABL1 translocation analysis	Procedure	CPT4	CPT4	S	81206	19700101	20991231
+2100000041	Amino acids measurement	Procedure	CPT4	CPT4	S	82139	19700101	20991231
+2100000042	Arsenic measurement	Procedure	CPT4	CPT4	S	82175	19700101	20991231
+2100000043	Copper measurement	Procedure	CPT4	CPT4	S	82525	19700101	20991231
+2100000044	Glutathione measurement	Procedure	CPT4	CPT4	S	82978	19700101	20991231
+2100000045	Magnesium measurement	Procedure	CPT4	CPT4	S	83735	19700101	20991231
+2100000046	Mercury quantitative	Procedure	CPT4	CPT4	S	83825	19700101	20991231
+2100000047	Organic acid measurement	Procedure	CPT4	CPT4	S	83921	19700101	20991231
+2100000048	Prostate specific antigen (PSA) total	Procedure	CPT4	CPT4	S	84153	19700101	20991231
+2100000049	Complete blood count (CBC) with differential	Procedure	CPT4	CPT4	S	85025	19700101	20991231
+2100000050	Molecular cytogenetics DNA probe (FISH)	Procedure	CPT4	CPT4	S	88271	19700101	20991231
+2100000051	Cytogenetics interpretation and report	Procedure	CPT4	CPT4	S	88291	19700101	20991231
+2100000052	Surgical pathology, level IV	Procedure	CPT4	CPT4	S	88305	19700101	20991231
+2100000053	Intravenous infusion, first hour	Procedure	CPT4	CPT4	S	96365	19700101	20991231
+2100000054	Intravenous infusion, additional hour	Procedure	CPT4	CPT4	S	96366	19700101	20991231
+2100000055	Therapeutic injection, subcutaneous or intramuscular	Procedure	CPT4	CPT4	S	96372	19700101	20991231
+2100000056	Electrical stimulation therapy	Procedure	CPT4	CPT4	S	97014	19700101	20991231
+2100000057	Chiropractic manipulative treatment, 3-4 regions	Procedure	CPT4	CPT4	S	98941	19700101	20991231
