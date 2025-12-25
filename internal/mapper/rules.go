@@ -91,7 +91,14 @@ func NewRuleEngine(vocab *VocabularyMapper, verbose bool) *RuleEngine {
 }
 
 // MapEntries maps a slice of source entries using a rule
+// If entriesRequired is false, all fields are treated as optional
 func (re *RuleEngine) MapEntries(rule MappingRule, sources interface{}, personID int64, visitMap map[string]int64) ([]map[string]interface{}, error) {
+	return re.MapEntriesWithOptional(rule, sources, personID, visitMap, true)
+}
+
+// MapEntriesWithOptional maps a slice of source entries using a rule
+// If entriesRequired is false, all fields are treated as optional
+func (re *RuleEngine) MapEntriesWithOptional(rule MappingRule, sources interface{}, personID int64, visitMap map[string]int64, entriesRequired bool) ([]map[string]interface{}, error) {
 	srcVal := reflect.ValueOf(sources)
 	if srcVal.Kind() != reflect.Slice {
 		return nil, fmt.Errorf("sources must be a slice")
@@ -100,7 +107,7 @@ func (re *RuleEngine) MapEntries(rule MappingRule, sources interface{}, personID
 	var results []map[string]interface{}
 	for i := 0; i < srcVal.Len(); i++ {
 		entry := srcVal.Index(i).Interface()
-		mapped, err := re.MapEntry(rule, entry, personID, visitMap)
+		mapped, err := re.MapEntryWithOptional(rule, entry, personID, visitMap, entriesRequired)
 		if err != nil {
 			return nil, fmt.Errorf("error mapping entry %d: %w", i, err)
 		}
@@ -112,6 +119,12 @@ func (re *RuleEngine) MapEntries(rule MappingRule, sources interface{}, personID
 
 // MapEntry maps a single source entry using a rule, returning potentially multiple records
 func (re *RuleEngine) MapEntry(rule MappingRule, source interface{}, personID int64, visitMap map[string]int64) ([]map[string]interface{}, error) {
+	return re.MapEntryWithOptional(rule, source, personID, visitMap, true)
+}
+
+// MapEntryWithOptional maps a single source entry using a rule, returning potentially multiple records
+// If entriesRequired is false, all fields are treated as optional
+func (re *RuleEngine) MapEntryWithOptional(rule MappingRule, source interface{}, personID int64, visitMap map[string]int64, entriesRequired bool) ([]map[string]interface{}, error) {
 	ctx := &MappingContext{
 		PersonID: personID,
 		Vocab:    re.vocab,
@@ -124,8 +137,10 @@ func (re *RuleEngine) MapEntry(rule MappingRule, source interface{}, personID in
 
 	for _, fm := range rule.Fields {
 		if fm.Transform == "vocab" {
+			// When entries are not required, treat all fields as optional
+			isOptional := fm.Optional || !entriesRequired
 			value, err := re.extractValue(source, fm.Source)
-			if err != nil && !fm.Optional {
+			if err != nil && !isOptional {
 				return nil, err
 			}
 
@@ -180,9 +195,12 @@ func (re *RuleEngine) MapEntry(rule MappingRule, source interface{}, personID in
 				continue
 			}
 
+			// When entries are not required, treat all fields as optional
+			isOptional := fm.Optional || !entriesRequired
+
 			value, err := re.extractValue(source, fm.Source)
 			if err != nil {
-				if fm.Optional {
+				if isOptional {
 					continue
 				}
 				return nil, fmt.Errorf("error extracting %s: %w", fm.Source, err)
@@ -196,7 +214,7 @@ func (re *RuleEngine) MapEntry(rule MappingRule, source interface{}, personID in
 
 			transformed, err := transform(value, fm, ctx)
 			if err != nil {
-				if fm.Optional {
+				if isOptional {
 					continue
 				}
 				return nil, fmt.Errorf("error transforming %s: %w", fm.Source, err)

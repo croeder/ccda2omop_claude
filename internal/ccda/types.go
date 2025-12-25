@@ -7,6 +7,12 @@ import (
 	"time"
 )
 
+// SectionMetadata contains metadata about a parsed C-CDA section
+type SectionMetadata struct {
+	TemplateOID     string // The template OID that was matched
+	EntriesRequired bool   // True if the section uses "entries required" template (OID ends in .1)
+}
+
 // Document represents a parsed C-CDA clinical document
 type Document struct {
 	XMLName       xml.Name
@@ -23,6 +29,9 @@ type Document struct {
 	Immunizations []Immunization
 	Devices       []Device
 	Observations  []SocialObservation
+
+	// Section metadata - tracks which template type was used for each section
+	SectionMeta map[string]SectionMetadata
 }
 
 // Patient represents patient demographics from the C-CDA recordTarget

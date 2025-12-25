@@ -61,7 +61,9 @@ func Parse(data []byte) (*Document, error) {
 }
 
 func parseDocument(root *xmlquery.Node) (*Document, error) {
-	doc := &Document{}
+	doc := &Document{
+		SectionMeta: make(map[string]SectionMetadata),
+	}
 
 	// Parse patient demographics
 	doc.Patient = parsePatient(root)
@@ -80,24 +82,64 @@ func parseDocument(root *xmlquery.Node) (*Document, error) {
 		switch templateOID {
 		case OIDEncounters, OIDEncountersEntriesReq:
 			doc.Encounters = parseEncounters(section)
+			doc.SectionMeta["Encounters"] = SectionMetadata{
+				TemplateOID:     templateOID,
+				EntriesRequired: templateOID == OIDEncountersEntriesReq,
+			}
 		case OIDProblems, OIDProblemsEntriesReq:
 			doc.Problems = parseProblems(section)
+			doc.SectionMeta["Problems"] = SectionMetadata{
+				TemplateOID:     templateOID,
+				EntriesRequired: templateOID == OIDProblemsEntriesReq,
+			}
 		case OIDMedications, OIDMedicationsEntriesReq:
 			doc.Medications = parseMedications(section)
+			doc.SectionMeta["Medications"] = SectionMetadata{
+				TemplateOID:     templateOID,
+				EntriesRequired: templateOID == OIDMedicationsEntriesReq,
+			}
 		case OIDProcedures, OIDProceduresEntriesReq:
 			doc.Procedures = parseProcedures(section)
+			doc.SectionMeta["Procedures"] = SectionMetadata{
+				TemplateOID:     templateOID,
+				EntriesRequired: templateOID == OIDProceduresEntriesReq,
+			}
 		case OIDVitalSigns, OIDVitalSignsEntriesReq:
 			doc.VitalSigns = parseVitalSigns(section)
+			doc.SectionMeta["VitalSigns"] = SectionMetadata{
+				TemplateOID:     templateOID,
+				EntriesRequired: templateOID == OIDVitalSignsEntriesReq,
+			}
 		case OIDResults, OIDResultsEntriesReq:
 			doc.LabResults = parseLabResults(section)
+			doc.SectionMeta["LabResults"] = SectionMetadata{
+				TemplateOID:     templateOID,
+				EntriesRequired: templateOID == OIDResultsEntriesReq,
+			}
 		case OIDAllergies, OIDAllergiesEntriesReq:
 			doc.Allergies = parseAllergies(section)
+			doc.SectionMeta["Allergies"] = SectionMetadata{
+				TemplateOID:     templateOID,
+				EntriesRequired: templateOID == OIDAllergiesEntriesReq,
+			}
 		case OIDImmunizations, OIDImmunizationsEntriesReq:
 			doc.Immunizations = parseImmunizations(section)
+			doc.SectionMeta["Immunizations"] = SectionMetadata{
+				TemplateOID:     templateOID,
+				EntriesRequired: templateOID == OIDImmunizationsEntriesReq,
+			}
 		case OIDMedicalEquipment:
 			doc.Devices = parseDevices(section)
+			doc.SectionMeta["Devices"] = SectionMetadata{
+				TemplateOID:     templateOID,
+				EntriesRequired: false, // No "entries required" variant for this section
+			}
 		case OIDSocialHistory:
 			doc.Observations = parseSocialHistory(section)
+			doc.SectionMeta["Observations"] = SectionMetadata{
+				TemplateOID:     templateOID,
+				EntriesRequired: false, // No "entries required" variant for this section
+			}
 		}
 	}
 

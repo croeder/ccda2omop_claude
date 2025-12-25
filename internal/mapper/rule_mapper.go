@@ -73,9 +73,9 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 		log.Printf("Mapped %d encounters", len(doc.Encounters))
 	}
 
-	// Map problems using rules
+	// Map problems using rules (respecting section metadata for optionality)
 	if rule := m.getRuleBySection("Problems"); rule != nil {
-		conditions, err := m.mapWithRule(*rule, doc.Problems, personID, visitMap)
+		conditions, err := m.mapWithRuleAndMeta(*rule, doc.Problems, personID, visitMap, doc.SectionMeta)
 		if err != nil {
 			return nil, err
 		}
@@ -89,7 +89,7 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 
 	// Map medications using rules
 	if rule := m.getRuleBySection("Medications"); rule != nil {
-		drugs, err := m.mapWithRule(*rule, doc.Medications, personID, visitMap)
+		drugs, err := m.mapWithRuleAndMeta(*rule, doc.Medications, personID, visitMap, doc.SectionMeta)
 		if err != nil {
 			return nil, err
 		}
@@ -103,7 +103,7 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 
 	// Map immunizations using rules
 	if rule := m.getRuleBySection("Immunizations"); rule != nil {
-		imms, err := m.mapWithRule(*rule, doc.Immunizations, personID, visitMap)
+		imms, err := m.mapWithRuleAndMeta(*rule, doc.Immunizations, personID, visitMap, doc.SectionMeta)
 		if err != nil {
 			return nil, err
 		}
@@ -117,7 +117,7 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 
 	// Map procedures using rules
 	if rule := m.getRuleBySection("Procedures"); rule != nil {
-		procs, err := m.mapWithRule(*rule, doc.Procedures, personID, visitMap)
+		procs, err := m.mapWithRuleAndMeta(*rule, doc.Procedures, personID, visitMap, doc.SectionMeta)
 		if err != nil {
 			return nil, err
 		}
@@ -131,7 +131,7 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 
 	// Map vital signs using rules
 	if rule := m.getRuleBySection("VitalSigns"); rule != nil {
-		vitals, err := m.mapWithRule(*rule, doc.VitalSigns, personID, visitMap)
+		vitals, err := m.mapWithRuleAndMeta(*rule, doc.VitalSigns, personID, visitMap, doc.SectionMeta)
 		if err != nil {
 			return nil, err
 		}
@@ -145,7 +145,7 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 
 	// Map lab results using rules
 	if rule := m.getRuleBySection("LabResults"); rule != nil {
-		labs, err := m.mapWithRule(*rule, doc.LabResults, personID, visitMap)
+		labs, err := m.mapWithRuleAndMeta(*rule, doc.LabResults, personID, visitMap, doc.SectionMeta)
 		if err != nil {
 			return nil, err
 		}
@@ -159,7 +159,7 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 
 	// Map allergies using rules
 	if rule := m.getRuleBySection("Allergies"); rule != nil {
-		allergies, err := m.mapWithRule(*rule, doc.Allergies, personID, visitMap)
+		allergies, err := m.mapWithRuleAndMeta(*rule, doc.Allergies, personID, visitMap, doc.SectionMeta)
 		if err != nil {
 			return nil, err
 		}
@@ -173,7 +173,7 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 
 	// Map social observations using rules
 	if rule := m.getRuleBySection("Observations"); rule != nil {
-		socialObs, err := m.mapWithRule(*rule, doc.Observations, personID, visitMap)
+		socialObs, err := m.mapWithRuleAndMeta(*rule, doc.Observations, personID, visitMap, doc.SectionMeta)
 		if err != nil {
 			return nil, err
 		}
@@ -187,7 +187,7 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 
 	// Map devices using rules
 	if rule := m.getRuleBySection("Devices"); rule != nil {
-		devices, err := m.mapWithRule(*rule, doc.Devices, personID, visitMap)
+		devices, err := m.mapWithRuleAndMeta(*rule, doc.Devices, personID, visitMap, doc.SectionMeta)
 		if err != nil {
 			return nil, err
 		}
@@ -215,6 +215,16 @@ func (m *RuleBasedMapper) getRuleBySection(section string) *MappingRule {
 // mapWithRule applies a rule to a slice of entries
 func (m *RuleBasedMapper) mapWithRule(rule MappingRule, entries interface{}, personID int64, visitMap map[string]int64) ([]map[string]interface{}, error) {
 	return m.engine.MapEntries(rule, entries, personID, visitMap)
+}
+
+// mapWithRuleAndMeta applies a rule to a slice of entries, using section metadata for optionality
+func (m *RuleBasedMapper) mapWithRuleAndMeta(rule MappingRule, entries interface{}, personID int64, visitMap map[string]int64, sectionMeta map[string]ccda.SectionMetadata) ([]map[string]interface{}, error) {
+	// Check if entries are required for this section
+	entriesRequired := true
+	if meta, ok := sectionMeta[rule.Source.Section]; ok {
+		entriesRequired = meta.EntriesRequired
+	}
+	return m.engine.MapEntriesWithOptional(rule, entries, personID, visitMap, entriesRequired)
 }
 
 // Conversion functions from map to OMOP structs
