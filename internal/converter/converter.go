@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/ccda2omop/internal/ccda"
 	"github.com/ccda2omop/internal/mapper"
@@ -84,6 +85,10 @@ func RunBatch(files []string, cfg Config) error {
 		if err != nil {
 			return fmt.Errorf("failed to process %s: %w", inputFile, err)
 		}
+
+		// Set source file on all records (use base filename for readability)
+		sourceFile := filepath.Base(inputFile)
+		setSourceFile(omopData, sourceFile)
 
 		// Aggregate the data
 		aggregatedData.Persons = append(aggregatedData.Persons, omopData.Persons...)
@@ -251,6 +256,10 @@ func Run(cfg Config) error {
 		}
 	}
 
+	// Set source file on all records
+	sourceFile := filepath.Base(cfg.InputFile)
+	setSourceFile(omopData, sourceFile)
+
 	// Write OMOP CSV files
 	writer := omop.NewCSVWriter(cfg.OutputDir)
 	if err := writer.WriteAll(omopData); err != nil {
@@ -269,4 +278,32 @@ func Run(cfg Config) error {
 	}
 
 	return nil
+}
+
+// setSourceFile sets the SourceFile field on all records in the OMOP data
+func setSourceFile(data *omop.OMOPData, sourceFile string) {
+	for i := range data.Persons {
+		data.Persons[i].SourceFile = sourceFile
+	}
+	for i := range data.VisitOccurrences {
+		data.VisitOccurrences[i].SourceFile = sourceFile
+	}
+	for i := range data.ConditionOccurrences {
+		data.ConditionOccurrences[i].SourceFile = sourceFile
+	}
+	for i := range data.DrugExposures {
+		data.DrugExposures[i].SourceFile = sourceFile
+	}
+	for i := range data.ProcedureOccurrences {
+		data.ProcedureOccurrences[i].SourceFile = sourceFile
+	}
+	for i := range data.Measurements {
+		data.Measurements[i].SourceFile = sourceFile
+	}
+	for i := range data.Observations {
+		data.Observations[i].SourceFile = sourceFile
+	}
+	for i := range data.DeviceExposures {
+		data.DeviceExposures[i].SourceFile = sourceFile
+	}
 }

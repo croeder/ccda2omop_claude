@@ -37,6 +37,7 @@ type Person struct {
 	EthnicitySourceValue       string     `csv:"ethnicity_source_value"`
 	EthnicitySourceConceptID   *int64     `csv:"ethnicity_source_concept_id"`
 	MappingRule                string     `csv:"mapping_rule"`
+	SourceFile                 string     `csv:"source_file"`
 }
 
 // VisitOccurrence represents the OMOP CDM 5.3 VISIT_OCCURRENCE table
@@ -59,6 +60,7 @@ type VisitOccurrence struct {
 	DischargeToSourceValue      string     `csv:"discharge_to_source_value"`
 	PrecedingVisitOccurrenceID  *int64     `csv:"preceding_visit_occurrence_id"`
 	MappingRule                 string     `csv:"mapping_rule"`
+	SourceFile                  string     `csv:"source_file"`
 }
 
 // ConditionOccurrence represents the OMOP CDM 5.3 CONDITION_OCCURRENCE table
@@ -80,6 +82,7 @@ type ConditionOccurrence struct {
 	ConditionSourceConceptID    *int64     `csv:"condition_source_concept_id"`
 	ConditionStatusSourceValue  string     `csv:"condition_status_source_value"`
 	MappingRule                 string     `csv:"mapping_rule"`
+	SourceFile                  string     `csv:"source_file"`
 }
 
 // DrugExposure represents the OMOP CDM 5.3 DRUG_EXPOSURE table
@@ -108,6 +111,7 @@ type DrugExposure struct {
 	RouteSourceValue           string     `csv:"route_source_value"`
 	DoseUnitSourceValue        string     `csv:"dose_unit_source_value"`
 	MappingRule                string     `csv:"mapping_rule"`
+	SourceFile                 string     `csv:"source_file"`
 }
 
 // ProcedureOccurrence represents the OMOP CDM 5.3 PROCEDURE_OCCURRENCE table
@@ -127,6 +131,7 @@ type ProcedureOccurrence struct {
 	ProcedureSourceConceptID  *int64     `csv:"procedure_source_concept_id"`
 	ModifierSourceValue       string     `csv:"modifier_source_value"`
 	MappingRule               string     `csv:"mapping_rule"`
+	SourceFile                string     `csv:"source_file"`
 }
 
 // Measurement represents the OMOP CDM 5.3 MEASUREMENT table
@@ -152,6 +157,7 @@ type Measurement struct {
 	UnitSourceValue           string     `csv:"unit_source_value"`
 	ValueSourceValue          string     `csv:"value_source_value"`
 	MappingRule               string     `csv:"mapping_rule"`
+	SourceFile                string     `csv:"source_file"`
 }
 
 // Observation represents the OMOP CDM 5.3 OBSERVATION table
@@ -175,6 +181,7 @@ type Observation struct {
 	UnitSourceValue           string     `csv:"unit_source_value"`
 	QualifierSourceValue      string     `csv:"qualifier_source_value"`
 	MappingRule               string     `csv:"mapping_rule"`
+	SourceFile                string     `csv:"source_file"`
 }
 
 // DeviceExposure represents the OMOP CDM 5.3 DEVICE_EXPOSURE table
@@ -195,4 +202,5 @@ type DeviceExposure struct {
 	DeviceSourceValue          string     `csv:"device_source_value"`
 	DeviceSourceConceptID      *int64     `csv:"device_source_concept_id"`
 	MappingRule                string     `csv:"mapping_rule"`
+	SourceFile                 string     `csv:"source_file"`
 }
