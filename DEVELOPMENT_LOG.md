@@ -1,4 +1,5 @@
 # CCDA2OMOP Development Log
+Copyright 2025 Christophe Roeder. All rights reserved.
 
 This log documents the prompts and changes made during development.
 
