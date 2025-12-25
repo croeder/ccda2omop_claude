@@ -141,8 +141,14 @@ func (re *RuleEngine) MapEntryWithOptional(rule MappingRule, source interface{},
 			// When entries are not required, treat all fields as optional
 			isOptional := fm.Optional || !entriesRequired
 			value, err := re.extractValue(source, fm.Source)
-			if err != nil && !isOptional {
-				return nil, err
+			if err != nil {
+				if isOptional {
+					// Optional field missing, use concept 0
+					conceptIDs = []int64{0}
+					break
+				}
+				// Required code field missing (e.g., nullFlavor) - skip this entry
+				return nil, nil
 			}
 
 			codeSystemValue, _ := re.extractValue(source, fm.VocabField)
@@ -154,7 +160,8 @@ func (re *RuleEngine) MapEntryWithOptional(rule MappingRule, source interface{},
 					conceptIDs = []int64{0}
 				}
 			} else {
-				conceptIDs = []int64{0}
+				// Empty code value - skip this entry
+				return nil, nil
 			}
 			break
 		}
