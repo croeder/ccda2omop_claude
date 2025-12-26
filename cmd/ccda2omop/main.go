@@ -22,8 +22,7 @@ func main() {
 	verbose := flag.Bool("verbose", false, "Enable verbose logging")
 	conceptFile := flag.String("concept", "", "Path to OMOP CONCEPT.csv vocabulary file")
 	relationshipFile := flag.String("relationship", "", "Path to OMOP CONCEPT_RELATIONSHIP.csv file")
-	useRules := flag.Bool("rules", false, "Use rule-based mapper")
-	rulesFile := flag.String("rules-file", "", "Path to YAML rules file or directory (implies -rules)")
+	rulesFile := flag.String("rules-file", "", "Path to custom YAML rules file or directory (uses built-in rules if not specified)")
 	analyzeFlag := flag.Bool("analyze", false, "Analyze input file(s) and show code mappings (requires -concept)")
 	analyzeOutput := flag.String("analyze-output", "", "Output CSV file for analysis (default: stdout)")
 	summary := flag.Bool("summary", false, "Show summary of C-CDA sections to OMOP table mappings (use with -analyze)")
@@ -32,7 +31,7 @@ func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "ccda2omop - Convert C-CDA XML documents to OMOP CDM 5.3 CSV files\n\n")
 		fmt.Fprintf(os.Stderr, "Usage:\n")
-		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml|dir> [-output <dir>] [-concept <vocab.csv>] [-relationship <rel.csv>] [-rules] [-rules-file <rules.yaml>] [-verbose]\n")
+		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml|dir> [-output <dir>] [-concept <vocab.csv>] [-relationship <rel.csv>] [-rules-file <rules.yaml>] [-verbose]\n")
 		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml|dir> -analyze -concept <vocab.csv> [-relationship <rel.csv>] [-analyze-output <file.csv>]\n")
 		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml|dir> -analyze -summary -concept <vocab.csv> [-relationship <rel.csv>]\n\n")
 		fmt.Fprintf(os.Stderr, "The -input flag accepts either a single XML file or a directory containing XML files.\n")
@@ -88,7 +87,6 @@ func main() {
 		ConceptFile:      *conceptFile,
 		RelationshipFile: *relationshipFile,
 		VocabDir:         *vocabDir,
-		UseRules:         *useRules || *rulesFile != "",
 		RulesFile:        *rulesFile,
 	}
 
