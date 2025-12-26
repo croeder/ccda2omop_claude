@@ -1,0 +1,31 @@
+# SUPPLEMENTARY UNII VOCABULARY - NOT FOR PRODUCTION USE
+#
+# The UNII codes in this file are real FDA Unique Ingredient Identifiers.
+# However, the concept_ids (2300000001+) are SYNTHETIC and do not correspond to official OMOP concept IDs.
+# This file was created for demonstration purposes and is NOT an official OMOP vocabulary.
+#
+# For production use, obtain the official vocabulary from:
+#   - OMOP Athena (https://athena.ohdsi.org/)
+#   - FDA UNII (https://precision.fda.gov/uniisearch)
+#
+concept_id	concept_name	domain_id	vocabulary_id	concept_class_id	standard_concept	concept_code	valid_start_date	valid_end_date	invalid_reason
+2300000001	Egg protein	Observation	UNII	Ingredient	S	291P45F896	19700101	20991231
+2300000002	Aspirin	Drug	UNII	Ingredient	S	R16CO5Y76E	19700101	20991231
+2300000003	Codeine	Drug	UNII	Ingredient	S	Q830PW7520	19700101	20991231
+2300000004	Peanut	Observation	UNII	Ingredient	S	QE53O8185P	19700101	20991231
+2300000005	Latex	Observation	UNII	Ingredient	S	2LQ0UUW8IN	19700101	20991231
+2300000006	Penicillin G	Drug	UNII	Ingredient	S	Q42T66VG0C	19700101	20991231
+2300000007	Sulfonamide	Drug	UNII	Ingredient	S	0FRP6NB3B0	19700101	20991231
+2300000008	Ibuprofen	Drug	UNII	Ingredient	S	WK2XYI10QM	19700101	20991231
+2300000009	Bee venom	Observation	UNII	Ingredient	S	J85E33LPNB	19700101	20991231
+2300000010	Cat dander	Observation	UNII	Ingredient	S	1564HD0N96	19700101	20991231
+2300000011	Dust mite	Observation	UNII	Ingredient	S	8T57K89265	19700101	20991231
+2300000012	Ragweed pollen	Observation	UNII	Ingredient	S	K31M1S4D3J	19700101	20991231
+2300000013	Shellfish	Observation	UNII	Ingredient	S	1B2M197809	19700101	20991231
+2300000014	Milk protein	Observation	UNII	Ingredient	S	0K47UL67F2	19700101	20991231
+2300000015	Soy protein	Observation	UNII	Ingredient	S	7S846K4TGW	19700101	20991231
+2300000016	Wheat gluten	Observation	UNII	Ingredient	S	8002802MIC	19700101	20991231
+2300000017	Tree nut	Observation	UNII	Ingredient	S	1234567890	19700101	20991231
+2300000018	Fish	Observation	UNII	Ingredient	S	0987654321	19700101	20991231
+2300000019	Sesame	Observation	UNII	Ingredient	S	5550001234	19700101	20991231
+2300000020	Morphine	Drug	UNII	Ingredient	S	76I7G6D29C	19700101	20991231

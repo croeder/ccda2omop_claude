@@ -1,0 +1,26 @@
+# SUPPLEMENTARY NDF-RT VOCABULARY - NOT FOR PRODUCTION USE
+#
+# The NDF-RT codes in this file are real National Drug File Reference Terminology codes.
+# However, the concept_ids (2400000001+) are SYNTHETIC and do not correspond to official OMOP concept IDs.
+# This file was created for demonstration purposes and is NOT an official OMOP vocabulary.
+#
+# For production use, obtain the official vocabulary from:
+#   - OMOP Athena (https://athena.ohdsi.org/)
+#   - NLM (https://www.nlm.nih.gov/research/umls/)
+#
+concept_id	concept_name	domain_id	vocabulary_id	concept_class_id	standard_concept	concept_code	valid_start_date	valid_end_date	invalid_reason
+2400000001	Penicillin V	Drug	NDFRT	Ingredient	S	N0000011298	19700101	20991231
+2400000002	Codeine	Drug	NDFRT	Ingredient	S	N0000006691	19700101	20991231
+2400000003	Aspirin	Drug	NDFRT	Ingredient	S	N0000006582	19700101	20991231
+2400000004	Amoxicillin	Drug	NDFRT	Ingredient	S	N0000005768	19700101	20991231
+2400000005	Penicillin G	Drug	NDFRT	Ingredient	S	N0000006824	19700101	20991231
+2400000006	Sulfonamides	Drug	NDFRT	Ingredient	S	N0000175503	19700101	20991231
+2400000007	Ibuprofen	Drug	NDFRT	Ingredient	S	N0000005893	19700101	20991231
+2400000008	Morphine	Drug	NDFRT	Ingredient	S	N0000006025	19700101	20991231
+2400000009	Tetracycline	Drug	NDFRT	Ingredient	S	N0000006078	19700101	20991231
+2400000010	Erythromycin	Drug	NDFRT	Ingredient	S	N0000005842	19700101	20991231
+2400000011	Cephalosporins	Drug	NDFRT	Ingredient	S	N0000175499	19700101	20991231
+2400000012	Ampicillin	Drug	NDFRT	Ingredient	S	N0000005770	19700101	20991231
+2400000013	Naproxen	Drug	NDFRT	Ingredient	S	N0000006029	19700101	20991231
+2400000014	Acetaminophen	Drug	NDFRT	Ingredient	S	N0000005571	19700101	20991231
+2400000015	Hydrocodone	Drug	NDFRT	Ingredient	S	N0000005887	19700101	20991231
