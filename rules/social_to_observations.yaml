@@ -1,7 +1,25 @@
 name: social_to_observations
 source:
   section: Observations
+  section_oid: "2.16.840.1.113883.10.20.22.2.17"
+  entry_xpath: "entry/observation"
   entry_type: SocialObservation
+  extraction:
+    - field: Code
+      xpath: "code"
+      type: code
+    - field: EffectiveTime
+      xpath: "effectiveTime"
+      type: effective_time
+    - field: Status
+      xpath: "statusCode"
+      type: code
+    - field: Value
+      xpath: "value"
+      type: code
+    - field: ValueQuantity
+      xpath: "value"
+      type: quantity
   conditions:
     - type: domain_equals
       value: Observation

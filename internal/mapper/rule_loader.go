@@ -28,9 +28,20 @@ type YAMLRule struct {
 
 // YAMLSourceSpec represents the source specification in YAML
 type YAMLSourceSpec struct {
-	Section    string          `yaml:"section"`
-	EntryType  string          `yaml:"entry_type"`
-	Conditions []YAMLCondition `yaml:"conditions,omitempty"`
+	Section              string           `yaml:"section"`
+	SectionOID           string           `yaml:"section_oid"`
+	SectionOIDEntriesReq string           `yaml:"section_oid_entries_required"`
+	EntryXPath           string           `yaml:"entry_xpath"`
+	Extraction           []YAMLExtraction `yaml:"extraction,omitempty"`
+	EntryType            string           `yaml:"entry_type"`
+	Conditions           []YAMLCondition  `yaml:"conditions,omitempty"`
+}
+
+// YAMLExtraction represents a field extraction specification in YAML
+type YAMLExtraction struct {
+	Field string `yaml:"field"` // Target field name
+	XPath string `yaml:"xpath"` // XPath expression relative to entry
+	Type  string `yaml:"type"`  // Value type: code, time, float, int, string, effective_time, quantity
 }
 
 // YAMLCondition represents a filter condition in YAML
@@ -164,12 +175,25 @@ func convertYAMLRule(yr YAMLRule) MappingRule {
 		})
 	}
 
+	extractions := make([]Extraction, 0, len(yr.Source.Extraction))
+	for _, ye := range yr.Source.Extraction {
+		extractions = append(extractions, Extraction{
+			Field: ye.Field,
+			XPath: ye.XPath,
+			Type:  ye.Type,
+		})
+	}
+
 	return MappingRule{
 		Name: yr.Name,
 		Source: SourceSpec{
-			Section:    yr.Source.Section,
-			EntryType:  yr.Source.EntryType,
-			Conditions: conditions,
+			Section:              yr.Source.Section,
+			SectionOID:           yr.Source.SectionOID,
+			SectionOIDEntriesReq: yr.Source.SectionOIDEntriesReq,
+			EntryXPath:           yr.Source.EntryXPath,
+			Extraction:           extractions,
+			EntryType:            yr.Source.EntryType,
+			Conditions:           conditions,
 		},
 		Target: TargetSpec{
 			Table:         yr.Target.Table,

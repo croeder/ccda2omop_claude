@@ -1,7 +1,32 @@
 name: labs_to_measurements
 source:
   section: LabResults
+  section_oid: "2.16.840.1.113883.10.20.22.2.3"
+  section_oid_entries_required: "2.16.840.1.113883.10.20.22.2.3.1"
+  entry_xpath: "entry/organizer/component/observation"
   entry_type: LabResult
+  extraction:
+    - field: Code
+      xpath: "code"
+      type: code
+    - field: EffectiveTime
+      xpath: "effectiveTime"
+      type: time
+    - field: Value
+      xpath: "value/@value"
+      type: float
+    - field: ValueString
+      xpath: "value/@value"
+      type: string
+    - field: Unit
+      xpath: "value/@unit"
+      type: string
+    - field: Interpretation
+      xpath: "interpretationCode"
+      type: code
+    - field: ReferenceRange
+      xpath: "referenceRange/observationRange/value"
+      type: quantity
   conditions:
     - type: domain_equals
       value: Measurement

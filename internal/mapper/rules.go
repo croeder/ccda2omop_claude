@@ -24,9 +24,20 @@ type MappingRule struct {
 
 // SourceSpec defines the source C-CDA section
 type SourceSpec struct {
-	Section    string      // C-CDA section name (Problems, Medications, etc.)
-	EntryType  string      // For documentation
-	Conditions []Condition // Filter conditions - entry must match all conditions
+	Section                  string        // C-CDA section name (Problems, Medications, etc.)
+	SectionOID               string        // Section template OID (e.g., "2.16.840.1.113883.10.20.22.2.4")
+	SectionOIDEntriesReq     string        // Section template OID for entries-required variant
+	EntryXPath               string        // XPath to find entries within the section
+	Extraction               []Extraction  // Field extraction specifications
+	EntryType                string        // For documentation
+	Conditions               []Condition   // Filter conditions - entry must match all conditions
+}
+
+// Extraction defines how to extract a field from XML
+type Extraction struct {
+	Field string // Target field name in the extracted map
+	XPath string // XPath expression relative to entry
+	Type  string // Value type: "code", "time", "float", "int", "string", "effective_time", "quantity"
 }
 
 // Condition defines a filter condition for source entries
@@ -276,6 +287,13 @@ func (re *RuleEngine) extractValue(source interface{}, path string) (interface{}
 
 func (re *RuleEngine) extractSingleValue(source interface{}, path string) (interface{}, error) {
 	parts := strings.Split(path, ".")
+
+	// Handle map[string]interface{} (from rule-driven extraction)
+	if m, ok := source.(map[string]interface{}); ok {
+		return re.extractFromMap(m, parts)
+	}
+
+	// Handle structs (from typed parser)
 	val := reflect.ValueOf(source)
 
 	for _, part := range parts {
@@ -298,6 +316,50 @@ func (re *RuleEngine) extractSingleValue(source interface{}, path string) (inter
 	}
 
 	return val.Interface(), nil
+}
+
+// extractFromMap extracts a value from nested maps using dot notation
+func (re *RuleEngine) extractFromMap(m map[string]interface{}, parts []string) (interface{}, error) {
+	var current interface{} = m
+
+	for i, part := range parts {
+		switch v := current.(type) {
+		case map[string]interface{}:
+			val, ok := v[part]
+			if !ok {
+				return nil, fmt.Errorf("key not found: %s", part)
+			}
+			current = val
+		case *float64:
+			if v == nil {
+				return nil, fmt.Errorf("nil pointer at %s", part)
+			}
+			if i == len(parts)-1 {
+				return *v, nil
+			}
+			return nil, fmt.Errorf("cannot traverse into float at %s", part)
+		case *int64:
+			if v == nil {
+				return nil, fmt.Errorf("nil pointer at %s", part)
+			}
+			if i == len(parts)-1 {
+				return *v, nil
+			}
+			return nil, fmt.Errorf("cannot traverse into int at %s", part)
+		case *time.Time:
+			if v == nil {
+				return nil, fmt.Errorf("nil pointer at %s", part)
+			}
+			if i == len(parts)-1 {
+				return *v, nil
+			}
+			return nil, fmt.Errorf("cannot traverse into time at %s", part)
+		default:
+			return nil, fmt.Errorf("cannot traverse into %T at %s", current, part)
+		}
+	}
+
+	return current, nil
 }
 
 func isZeroValue(v interface{}) bool {
@@ -542,6 +604,7 @@ func (re *RuleEngine) transformValueVocab(value interface{}, fm FieldMapping, ct
 }
 
 func transformFormatSource(value interface{}, fm FieldMapping, ctx *MappingContext) (interface{}, error) {
+	// Handle ccda.CodedValue (from typed parser)
 	if cv, ok := value.(ccda.CodedValue); ok {
 		if cv.DisplayName != "" {
 			return cv.DisplayName, nil
@@ -550,6 +613,18 @@ func transformFormatSource(value interface{}, fm FieldMapping, ctx *MappingConte
 			return cv.Code, nil
 		}
 		return cv.OriginalText, nil
+	}
+	// Handle map[string]interface{} (from rule-driven extraction)
+	if m, ok := value.(map[string]interface{}); ok {
+		if dn, ok := m["DisplayName"].(string); ok && dn != "" {
+			return dn, nil
+		}
+		if code, ok := m["Code"].(string); ok && code != "" {
+			return code, nil
+		}
+		if ot, ok := m["OriginalText"].(string); ok && ot != "" {
+			return ot, nil
+		}
 	}
 	return fmt.Sprintf("%v", value), nil
 }

@@ -1,7 +1,26 @@
 name: vitals_to_measurements
 source:
   section: VitalSigns
+  section_oid: "2.16.840.1.113883.10.20.22.2.4"
+  section_oid_entries_required: "2.16.840.1.113883.10.20.22.2.4.1"
+  entry_xpath: "entry/organizer/component/observation"
   entry_type: VitalSign
+  extraction:
+    - field: Code
+      xpath: "code"
+      type: code
+    - field: EffectiveTime
+      xpath: "effectiveTime"
+      type: time
+    - field: Value
+      xpath: "value/@value"
+      type: float
+    - field: Unit
+      xpath: "value/@unit"
+      type: string
+    - field: Interpretation
+      xpath: "interpretationCode"
+      type: code
   conditions:
     - type: domain_equals
       value: Measurement

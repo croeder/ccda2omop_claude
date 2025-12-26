@@ -1,7 +1,29 @@
 name: immunizations_to_drugs
 source:
   section: Immunizations
+  section_oid: "2.16.840.1.113883.10.20.22.2.2"
+  section_oid_entries_required: "2.16.840.1.113883.10.20.22.2.2.1"
+  entry_xpath: "entry/substanceAdministration"
   entry_type: Immunization
+  extraction:
+    - field: Code
+      xpath: "consumable/manufacturedProduct/manufacturedMaterial/code"
+      type: code
+    - field: EffectiveTime
+      xpath: "effectiveTime"
+      type: time
+    - field: Status
+      xpath: "statusCode"
+      type: code
+    - field: RouteCode
+      xpath: "routeCode"
+      type: code
+    - field: DoseQuantity
+      xpath: "doseQuantity"
+      type: quantity
+    - field: LotNumber
+      xpath: "consumable/manufacturedProduct/manufacturedMaterial/lotNumberText"
+      type: string
 target:
   table: drug_exposure
   type_concept_id: 32817

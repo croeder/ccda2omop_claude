@@ -1,15 +1,33 @@
 name: devices_to_device_exposure
 source:
   section: Devices
+  section_oid: "2.16.840.1.113883.10.20.22.2.23"
+  entry_xpath: "entry/supply"
   entry_type: Device
+  extraction:
+    - field: Code
+      xpath: "product/manufacturedProduct/manufacturedMaterial/code"
+      type: code
+    - field: CodeAlt
+      xpath: "participant/participantRole/playingDevice/code"
+      type: code
+    - field: EffectiveTime
+      xpath: "effectiveTime"
+      type: effective_time
+    - field: Status
+      xpath: "statusCode"
+      type: code
+    - field: UDI
+      xpath: "participant/participantRole/id/@extension"
+      type: string
 target:
   table: device_exposure
   type_concept_id: 32817
 fields:
-  - source: Code.Code
+  - source: Code.Code|CodeAlt.Code
     target: device_concept_id
     transform: vocab
-    vocab_field: Code.CodeSystem
+    vocab_field: Code.CodeSystem|CodeAlt.CodeSystem
   - source: EffectiveTime.Low|EffectiveTime.Value
     target: device_exposure_start_date
     transform: date
@@ -26,7 +44,7 @@ fields:
     target: device_exposure_end_datetime
     transform: time_ptr
     optional: true
-  - source: Code
+  - source: Code|CodeAlt
     target: device_source_value
     transform: format_source
   - source: UDI

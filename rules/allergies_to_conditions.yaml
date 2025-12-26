@@ -1,7 +1,23 @@
 name: allergies_to_conditions
 source:
   section: Allergies
+  section_oid: "2.16.840.1.113883.10.20.22.2.6"
+  section_oid_entries_required: "2.16.840.1.113883.10.20.22.2.6.1"
+  entry_xpath: "entry/act/entryRelationship/observation"
   entry_type: Allergy
+  extraction:
+    - field: Substance
+      xpath: "participant[@typeCode='CSM']/participantRole/playingEntity/code"
+      type: code
+    - field: Code
+      xpath: "code"
+      type: code
+    - field: EffectiveTime
+      xpath: "effectiveTime"
+      type: effective_time
+    - field: Status
+      xpath: "statusCode"
+      type: code
   conditions:
     - type: domain_equals
       value: Condition
