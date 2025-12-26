@@ -73,17 +73,27 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 		log.Printf("Mapped %d encounters", len(doc.Encounters))
 	}
 
-	// Map problems using rules (respecting section metadata for optionality)
+	// Map problems using rules with domain-aware routing
 	if rule := m.getRuleBySection("Problems"); rule != nil {
 		conditions, err := m.mapWithRuleAndMeta(*rule, doc.Problems, personID, visitMap, doc.SectionMeta)
 		if err != nil {
 			return nil, err
 		}
+		conditionCount := 0
+		observationCount := 0
 		for _, c := range conditions {
-			data.ConditionOccurrences = append(data.ConditionOccurrences, m.toConditionOccurrence(c))
+			conceptID := getInt64(c, "condition_concept_id")
+			domain := m.engine.vocab.GetConceptDomain(conceptID)
+			if domain == "Observation" {
+				data.Observations = append(data.Observations, m.conditionToObservation(c))
+				observationCount++
+			} else {
+				data.ConditionOccurrences = append(data.ConditionOccurrences, m.toConditionOccurrence(c))
+				conditionCount++
+			}
 		}
 		if m.verbose {
-			log.Printf("Mapped %d problems to %d condition records (rule-based)", len(doc.Problems), len(conditions))
+			log.Printf("Mapped %d problems: %d to condition, %d to observation (domain-aware)", len(doc.Problems), conditionCount, observationCount)
 		}
 	}
 
@@ -115,31 +125,56 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 		}
 	}
 
-	// Map procedures using rules
+	// Map procedures using rules with domain-aware routing
 	if rule := m.getRuleBySection("Procedures"); rule != nil {
 		procs, err := m.mapWithRuleAndMeta(*rule, doc.Procedures, personID, visitMap, doc.SectionMeta)
 		if err != nil {
 			return nil, err
 		}
+		procedureCount := 0
+		measurementCount := 0
+		observationCount := 0
 		for _, p := range procs {
-			data.ProcedureOccurrences = append(data.ProcedureOccurrences, m.toProcedureOccurrence(p))
+			conceptID := getInt64(p, "procedure_concept_id")
+			domain := m.engine.vocab.GetConceptDomain(conceptID)
+			switch domain {
+			case "Measurement":
+				data.Measurements = append(data.Measurements, m.procedureToMeasurement(p))
+				measurementCount++
+			case "Observation":
+				data.Observations = append(data.Observations, m.procedureToObservation(p))
+				observationCount++
+			default:
+				data.ProcedureOccurrences = append(data.ProcedureOccurrences, m.toProcedureOccurrence(p))
+				procedureCount++
+			}
 		}
 		if m.verbose {
-			log.Printf("Mapped %d procedures to %d procedure records (rule-based)", len(doc.Procedures), len(procs))
+			log.Printf("Mapped %d procedures: %d to procedure, %d to measurement, %d to observation (domain-aware)", len(doc.Procedures), procedureCount, measurementCount, observationCount)
 		}
 	}
 
-	// Map vital signs using rules
+	// Map vital signs using rules with domain-aware routing
 	if rule := m.getRuleBySection("VitalSigns"); rule != nil {
 		vitals, err := m.mapWithRuleAndMeta(*rule, doc.VitalSigns, personID, visitMap, doc.SectionMeta)
 		if err != nil {
 			return nil, err
 		}
+		measurementCount := 0
+		observationCount := 0
 		for _, v := range vitals {
-			data.Measurements = append(data.Measurements, m.toMeasurement(v))
+			conceptID := getInt64(v, "measurement_concept_id")
+			domain := m.engine.vocab.GetConceptDomain(conceptID)
+			if domain == "Observation" {
+				data.Observations = append(data.Observations, m.measurementToObservation(v))
+				observationCount++
+			} else {
+				data.Measurements = append(data.Measurements, m.toMeasurement(v))
+				measurementCount++
+			}
 		}
 		if m.verbose {
-			log.Printf("Mapped %d vital signs to %d measurement records (rule-based)", len(doc.VitalSigns), len(vitals))
+			log.Printf("Mapped %d vital signs: %d to measurement, %d to observation (domain-aware)", len(doc.VitalSigns), measurementCount, observationCount)
 		}
 	}
 
@@ -169,31 +204,56 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 		}
 	}
 
-	// Map allergies using rules
+	// Map allergies using rules with domain-aware routing
 	if rule := m.getRuleBySection("Allergies"); rule != nil {
 		allergies, err := m.mapWithRuleAndMeta(*rule, doc.Allergies, personID, visitMap, doc.SectionMeta)
 		if err != nil {
 			return nil, err
 		}
+		observationCount := 0
+		conditionCount := 0
 		for _, a := range allergies {
-			data.Observations = append(data.Observations, m.toObservation(a))
+			conceptID := getInt64(a, "observation_concept_id")
+			domain := m.engine.vocab.GetConceptDomain(conceptID)
+			if domain == "Condition" {
+				data.ConditionOccurrences = append(data.ConditionOccurrences, m.observationToCondition(a))
+				conditionCount++
+			} else {
+				data.Observations = append(data.Observations, m.toObservation(a))
+				observationCount++
+			}
 		}
 		if m.verbose {
-			log.Printf("Mapped %d allergies to %d observation records (rule-based)", len(doc.Allergies), len(allergies))
+			log.Printf("Mapped %d allergies: %d to observation, %d to condition (domain-aware)", len(doc.Allergies), observationCount, conditionCount)
 		}
 	}
 
-	// Map social observations using rules
+	// Map social observations using rules with domain-aware routing
 	if rule := m.getRuleBySection("Observations"); rule != nil {
 		socialObs, err := m.mapWithRuleAndMeta(*rule, doc.Observations, personID, visitMap, doc.SectionMeta)
 		if err != nil {
 			return nil, err
 		}
+		observationCount := 0
+		measurementCount := 0
+		conditionCount := 0
 		for _, o := range socialObs {
-			data.Observations = append(data.Observations, m.toObservation(o))
+			conceptID := getInt64(o, "observation_concept_id")
+			domain := m.engine.vocab.GetConceptDomain(conceptID)
+			switch domain {
+			case "Measurement":
+				data.Measurements = append(data.Measurements, m.observationToMeasurement(o))
+				measurementCount++
+			case "Condition":
+				data.ConditionOccurrences = append(data.ConditionOccurrences, m.observationToCondition(o))
+				conditionCount++
+			default:
+				data.Observations = append(data.Observations, m.toObservation(o))
+				observationCount++
+			}
 		}
 		if m.verbose {
-			log.Printf("Mapped %d social observations to %d observation records (rule-based)", len(doc.Observations), len(socialObs))
+			log.Printf("Mapped %d social observations: %d to observation, %d to measurement, %d to condition (domain-aware)", len(doc.Observations), observationCount, measurementCount, conditionCount)
 		}
 	}
 
@@ -362,6 +422,158 @@ func (m *RuleBasedMapper) toMeasurement(record map[string]interface{}) omop.Meas
 	}
 	if v := getFloat64Ptr(record, "range_high"); v != nil {
 		meas.RangeHigh = v
+	}
+
+	return meas
+}
+
+// measurementToObservation converts a measurement record to an observation
+// Used for domain-aware routing when concept's domain is "Observation"
+func (m *RuleBasedMapper) measurementToObservation(record map[string]interface{}) omop.Observation {
+	obs := omop.Observation{
+		ObservationID:            getInt64(record, "measurement_id"),
+		PersonID:                 getInt64(record, "person_id"),
+		ObservationConceptID:     getInt64(record, "measurement_concept_id"),
+		ObservationTypeConceptID: getInt64(record, "measurement_type_concept_id"),
+		ObservationSourceValue:   getString(record, "measurement_source_value"),
+		UnitSourceValue:          getString(record, "unit_source_value"),
+		MappingRule:              getString(record, "mapping_rule") + ":DomainRouted",
+	}
+
+	if v, ok := record["measurement_date"].(time.Time); ok {
+		obs.ObservationDate = v
+	}
+	if v := getTimePtr(record, "measurement_datetime"); v != nil {
+		obs.ObservationDatetime = v
+	}
+	if v := getFloat64Ptr(record, "value_as_number"); v != nil {
+		obs.ValueAsNumber = v
+	}
+	if v := getInt64Ptr(record, "value_as_concept_id"); v != nil {
+		obs.ValueAsConceptID = v
+	}
+	if v := getString(record, "value_source_value"); v != "" {
+		obs.ValueAsString = v
+	}
+
+	return obs
+}
+
+// procedureToMeasurement converts a procedure record to a measurement
+// Used for domain-aware routing when concept's domain is "Measurement"
+func (m *RuleBasedMapper) procedureToMeasurement(record map[string]interface{}) omop.Measurement {
+	meas := omop.Measurement{
+		MeasurementID:            getInt64(record, "procedure_occurrence_id"),
+		PersonID:                 getInt64(record, "person_id"),
+		MeasurementConceptID:     getInt64(record, "procedure_concept_id"),
+		MeasurementTypeConceptID: getInt64(record, "procedure_type_concept_id"),
+		MeasurementSourceValue:   getString(record, "procedure_source_value"),
+		MappingRule:              getString(record, "mapping_rule") + ":DomainRouted",
+	}
+
+	if v, ok := record["procedure_date"].(time.Time); ok {
+		meas.MeasurementDate = v
+	}
+	if v := getTimePtr(record, "procedure_datetime"); v != nil {
+		meas.MeasurementDatetime = v
+	}
+
+	return meas
+}
+
+// procedureToObservation converts a procedure record to an observation
+// Used for domain-aware routing when concept's domain is "Observation"
+func (m *RuleBasedMapper) procedureToObservation(record map[string]interface{}) omop.Observation {
+	obs := omop.Observation{
+		ObservationID:            getInt64(record, "procedure_occurrence_id"),
+		PersonID:                 getInt64(record, "person_id"),
+		ObservationConceptID:     getInt64(record, "procedure_concept_id"),
+		ObservationTypeConceptID: getInt64(record, "procedure_type_concept_id"),
+		ObservationSourceValue:   getString(record, "procedure_source_value"),
+		MappingRule:              getString(record, "mapping_rule") + ":DomainRouted",
+	}
+
+	if v, ok := record["procedure_date"].(time.Time); ok {
+		obs.ObservationDate = v
+	}
+	if v := getTimePtr(record, "procedure_datetime"); v != nil {
+		obs.ObservationDatetime = v
+	}
+
+	return obs
+}
+
+// conditionToObservation converts a condition record to an observation
+// Used for domain-aware routing when concept's domain is "Observation"
+func (m *RuleBasedMapper) conditionToObservation(record map[string]interface{}) omop.Observation {
+	obs := omop.Observation{
+		ObservationID:            getInt64(record, "condition_occurrence_id"),
+		PersonID:                 getInt64(record, "person_id"),
+		ObservationConceptID:     getInt64(record, "condition_concept_id"),
+		ObservationTypeConceptID: getInt64(record, "condition_type_concept_id"),
+		ObservationSourceValue:   getString(record, "condition_source_value"),
+		MappingRule:              getString(record, "mapping_rule") + ":DomainRouted",
+	}
+
+	if v, ok := record["condition_start_date"].(time.Time); ok {
+		obs.ObservationDate = v
+	}
+	if v := getTimePtr(record, "condition_start_datetime"); v != nil {
+		obs.ObservationDatetime = v
+	}
+
+	return obs
+}
+
+// observationToCondition converts an observation record to a condition
+// Used for domain-aware routing when concept's domain is "Condition"
+func (m *RuleBasedMapper) observationToCondition(record map[string]interface{}) omop.ConditionOccurrence {
+	c := omop.ConditionOccurrence{
+		ConditionOccurrenceID:  getInt64(record, "observation_id"),
+		PersonID:               getInt64(record, "person_id"),
+		ConditionConceptID:     getInt64(record, "observation_concept_id"),
+		ConditionTypeConceptID: getInt64(record, "observation_type_concept_id"),
+		ConditionSourceValue:   getString(record, "observation_source_value"),
+		MappingRule:            getString(record, "mapping_rule") + ":DomainRouted",
+	}
+
+	if v, ok := record["observation_date"].(time.Time); ok {
+		c.ConditionStartDate = v
+	}
+	if v := getTimePtr(record, "observation_datetime"); v != nil {
+		c.ConditionStartDatetime = v
+	}
+
+	return c
+}
+
+// observationToMeasurement converts an observation record to a measurement
+// Used for domain-aware routing when concept's domain is "Measurement"
+func (m *RuleBasedMapper) observationToMeasurement(record map[string]interface{}) omop.Measurement {
+	meas := omop.Measurement{
+		MeasurementID:            getInt64(record, "observation_id"),
+		PersonID:                 getInt64(record, "person_id"),
+		MeasurementConceptID:     getInt64(record, "observation_concept_id"),
+		MeasurementTypeConceptID: getInt64(record, "observation_type_concept_id"),
+		MeasurementSourceValue:   getString(record, "observation_source_value"),
+		UnitSourceValue:          getString(record, "unit_source_value"),
+		MappingRule:              getString(record, "mapping_rule") + ":DomainRouted",
+	}
+
+	if v, ok := record["observation_date"].(time.Time); ok {
+		meas.MeasurementDate = v
+	}
+	if v := getTimePtr(record, "observation_datetime"); v != nil {
+		meas.MeasurementDatetime = v
+	}
+	if v := getFloat64Ptr(record, "value_as_number"); v != nil {
+		meas.ValueAsNumber = v
+	}
+	if v := getInt64Ptr(record, "value_as_concept_id"); v != nil {
+		meas.ValueAsConceptID = v
+	}
+	if v := getString(record, "value_as_string"); v != "" {
+		meas.ValueSourceValue = v
 	}
 
 	return meas
