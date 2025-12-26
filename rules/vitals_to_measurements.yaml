@@ -2,6 +2,9 @@ name: vitals_to_measurements
 source:
   section: VitalSigns
   entry_type: VitalSign
+  conditions:
+    - type: domain_not_equals
+      value: Observation
 target:
   table: measurement
   type_concept_id: 32817

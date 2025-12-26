@@ -1,37 +1,31 @@
-name: procedures_to_procedures
+name: procedures_to_measurements
 source:
   section: Procedures
   entry_type: Procedure
   conditions:
-    - type: domain_not_equals
+    - type: domain_equals
       value: Measurement
-    - type: domain_not_equals
-      value: Observation
 target:
-  table: procedure_occurrence
+  table: measurement
   type_concept_id: 32817
 fields:
   - source: Code.Code
-    target: procedure_concept_id
+    target: measurement_concept_id
     transform: vocab
     vocab_field: Code.CodeSystem
   - source: EffectiveTime.Low|EffectiveTime.Value
-    target: procedure_date
+    target: measurement_date
     transform: date
     optional: true
   - source: EffectiveTime.Low|EffectiveTime.Value
-    target: procedure_datetime
+    target: measurement_datetime
     transform: time_ptr
     optional: true
   - source: Code
-    target: procedure_source_value
+    target: measurement_source_value
     transform: format_source
-  - source: TargetSite.DisplayName
-    target: modifier_source_value
-    transform: string
-    optional: true
 id_gen:
   base_fields:
     - Code.Code
     - EffectiveTime.Low
-  generator: procedure
+  generator: measurement

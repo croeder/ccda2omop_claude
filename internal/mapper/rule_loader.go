@@ -28,8 +28,16 @@ type YAMLRule struct {
 
 // YAMLSourceSpec represents the source specification in YAML
 type YAMLSourceSpec struct {
-	Section   string `yaml:"section"`
-	EntryType string `yaml:"entry_type"`
+	Section    string          `yaml:"section"`
+	EntryType  string          `yaml:"entry_type"`
+	Conditions []YAMLCondition `yaml:"conditions,omitempty"`
+}
+
+// YAMLCondition represents a filter condition in YAML
+type YAMLCondition struct {
+	Type  string `yaml:"type"`  // domain_equals, domain_not_equals, field_equals, field_not_equals, field_contains
+	Field string `yaml:"field"` // For field conditions: field path to check
+	Value string `yaml:"value"` // Value to compare against
 }
 
 // YAMLTargetSpec represents the target specification in YAML
@@ -147,11 +155,21 @@ func convertYAMLRule(yr YAMLRule) MappingRule {
 		})
 	}
 
+	conditions := make([]Condition, 0, len(yr.Source.Conditions))
+	for _, yc := range yr.Source.Conditions {
+		conditions = append(conditions, Condition{
+			Type:  yc.Type,
+			Field: yc.Field,
+			Value: yc.Value,
+		})
+	}
+
 	return MappingRule{
 		Name: yr.Name,
 		Source: SourceSpec{
-			Section:   yr.Source.Section,
-			EntryType: yr.Source.EntryType,
+			Section:    yr.Source.Section,
+			EntryType:  yr.Source.EntryType,
+			Conditions: conditions,
 		},
 		Target: TargetSpec{
 			Table:         yr.Target.Table,

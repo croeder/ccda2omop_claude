@@ -1,12 +1,10 @@
-name: social_to_observations
+name: vitals_to_observations
 source:
-  section: Observations
-  entry_type: SocialObservation
+  section: VitalSigns
+  entry_type: VitalSign
   conditions:
-    - type: domain_not_equals
-      value: Measurement
-    - type: domain_not_equals
-      value: Condition
+    - type: domain_equals
+      value: Observation
 target:
   table: observation
   type_concept_id: 32817
@@ -15,36 +13,37 @@ fields:
     target: observation_concept_id
     transform: vocab
     vocab_field: Code.CodeSystem
-  - source: EffectiveTime.Low|EffectiveTime.Value
+  - source: EffectiveTime
     target: observation_date
     transform: date
     optional: true
-  - source: EffectiveTime.Low|EffectiveTime.Value
+  - source: EffectiveTime
     target: observation_datetime
     transform: time_ptr
     optional: true
   - source: Code
     target: observation_source_value
     transform: format_source
-  - source: Value.DisplayName
-    target: value_as_string
-    transform: string
-    optional: true
-  - source: Value.Code
-    target: value_as_concept_id
-    transform: value_vocab
-    vocab_field: Value.CodeSystem
-    optional: true
-  - source: ValueQuantity.Value
+  - source: Value
     target: value_as_number
     transform: float
     optional: true
-  - source: ValueQuantity.Unit
+  - source: Unit
     target: unit_source_value
     transform: string
+    optional: true
+  - source: Value
+    target: value_as_string
+    transform: string
+    optional: true
+  - source: Interpretation.Code
+    target: value_as_concept_id
+    transform: value_vocab
+    vocab_field: Interpretation.CodeSystem
     optional: true
 id_gen:
   base_fields:
     - Code.Code
-    - EffectiveTime.Low
+    - EffectiveTime
+    - Value
   generator: observation

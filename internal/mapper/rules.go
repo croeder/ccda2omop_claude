@@ -24,8 +24,16 @@ type MappingRule struct {
 
 // SourceSpec defines the source C-CDA section
 type SourceSpec struct {
-	Section   string // C-CDA section name (Problems, Medications, etc.)
-	EntryType string // For documentation
+	Section    string      // C-CDA section name (Problems, Medications, etc.)
+	EntryType  string      // For documentation
+	Conditions []Condition // Filter conditions - entry must match all conditions
+}
+
+// Condition defines a filter condition for source entries
+type Condition struct {
+	Type  string // Condition type: "domain_equals", "domain_not_equals", "field_equals", "field_not_equals"
+	Field string // For field conditions: field path to check
+	Value string // Value to compare against (domain name or field value)
 }
 
 // TargetSpec defines the target OMOP table
@@ -169,6 +177,15 @@ func (re *RuleEngine) MapEntryWithOptional(rule MappingRule, source interface{},
 
 	if len(conceptIDs) == 0 {
 		conceptIDs = []int64{0}
+	}
+
+	// Check conditions - if any condition fails, skip this entry
+	if len(rule.Source.Conditions) > 0 {
+		// For domain conditions, we need the first concept ID
+		conceptID := conceptIDs[0]
+		if !re.checkConditions(rule.Source.Conditions, source, conceptID) {
+			return nil, nil // Conditions not met, skip entry
+		}
 	}
 
 	// Generate base ID
@@ -535,4 +552,53 @@ func transformFormatSource(value interface{}, fm FieldMapping, ctx *MappingConte
 		return cv.OriginalText, nil
 	}
 	return fmt.Sprintf("%v", value), nil
+}
+
+// checkConditions evaluates all conditions for an entry
+// Returns true if all conditions pass, false if any condition fails
+func (re *RuleEngine) checkConditions(conditions []Condition, source interface{}, conceptID int64) bool {
+	for _, cond := range conditions {
+		if !re.checkCondition(cond, source, conceptID) {
+			return false
+		}
+	}
+	return true
+}
+
+// checkCondition evaluates a single condition
+func (re *RuleEngine) checkCondition(cond Condition, source interface{}, conceptID int64) bool {
+	switch cond.Type {
+	case "domain_equals":
+		domain := re.vocab.GetConceptDomain(conceptID)
+		return domain == cond.Value
+
+	case "domain_not_equals":
+		domain := re.vocab.GetConceptDomain(conceptID)
+		return domain != cond.Value
+
+	case "field_equals":
+		value, err := re.extractValue(source, cond.Field)
+		if err != nil {
+			return false
+		}
+		return fmt.Sprintf("%v", value) == cond.Value
+
+	case "field_not_equals":
+		value, err := re.extractValue(source, cond.Field)
+		if err != nil {
+			return true // Field not found means it's not equal
+		}
+		return fmt.Sprintf("%v", value) != cond.Value
+
+	case "field_contains":
+		value, err := re.extractValue(source, cond.Field)
+		if err != nil {
+			return false
+		}
+		return strings.Contains(fmt.Sprintf("%v", value), cond.Value)
+
+	default:
+		// Unknown condition type - pass by default
+		return true
+	}
 }

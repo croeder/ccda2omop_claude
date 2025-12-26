@@ -1,33 +1,31 @@
-name: social_to_observations
+name: social_to_measurements
 source:
   section: Observations
   entry_type: SocialObservation
   conditions:
-    - type: domain_not_equals
+    - type: domain_equals
       value: Measurement
-    - type: domain_not_equals
-      value: Condition
 target:
-  table: observation
+  table: measurement
   type_concept_id: 32817
 fields:
   - source: Code.Code
-    target: observation_concept_id
+    target: measurement_concept_id
     transform: vocab
     vocab_field: Code.CodeSystem
   - source: EffectiveTime.Low|EffectiveTime.Value
-    target: observation_date
+    target: measurement_date
     transform: date
     optional: true
   - source: EffectiveTime.Low|EffectiveTime.Value
-    target: observation_datetime
+    target: measurement_datetime
     transform: time_ptr
     optional: true
   - source: Code
-    target: observation_source_value
+    target: measurement_source_value
     transform: format_source
   - source: Value.DisplayName
-    target: value_as_string
+    target: value_source_value
     transform: string
     optional: true
   - source: Value.Code
@@ -47,4 +45,4 @@ id_gen:
   base_fields:
     - Code.Code
     - EffectiveTime.Low
-  generator: observation
+  generator: measurement

@@ -1,18 +1,19 @@
-name: problems_to_conditions
+name: allergies_to_conditions
 source:
-  section: Problems
-  entry_type: Problem
+  section: Allergies
+  entry_type: Allergy
   conditions:
-    - type: domain_not_equals
-      value: Observation
+    - type: domain_equals
+      value: Condition
 target:
   table: condition_occurrence
   type_concept_id: 32817
 fields:
-  - source: Code.Code
+  - source: Substance.Code|Code.Code
     target: condition_concept_id
     transform: vocab
-    vocab_field: Code.CodeSystem
+    vocab_field: Substance.CodeSystem|Code.CodeSystem
+    optional: true
   - source: EffectiveTime.Low|EffectiveTime.Value
     target: condition_start_date
     transform: date
@@ -21,19 +22,12 @@ fields:
     target: condition_start_datetime
     transform: time_ptr
     optional: true
-  - source: EffectiveTime.High
-    target: condition_end_date
-    transform: time_ptr
-    optional: true
-  - source: EffectiveTime.High
-    target: condition_end_datetime
-    transform: time_ptr
-    optional: true
-  - source: Code
+  - source: Substance|Code
     target: condition_source_value
     transform: format_source
+    optional: true
 id_gen:
   base_fields:
-    - Code.Code
+    - Substance.Code
     - EffectiveTime.Low
   generator: condition

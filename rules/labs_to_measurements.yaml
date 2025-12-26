@@ -2,6 +2,9 @@ name: labs_to_measurements
 source:
   section: LabResults
   entry_type: LabResult
+  conditions:
+    - type: domain_not_equals
+      value: Observation
 target:
   table: measurement
   type_concept_id: 32817

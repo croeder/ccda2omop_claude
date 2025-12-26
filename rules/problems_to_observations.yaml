@@ -1,39 +1,31 @@
-name: problems_to_conditions
+name: problems_to_observations
 source:
   section: Problems
   entry_type: Problem
   conditions:
-    - type: domain_not_equals
+    - type: domain_equals
       value: Observation
 target:
-  table: condition_occurrence
+  table: observation
   type_concept_id: 32817
 fields:
   - source: Code.Code
-    target: condition_concept_id
+    target: observation_concept_id
     transform: vocab
     vocab_field: Code.CodeSystem
   - source: EffectiveTime.Low|EffectiveTime.Value
-    target: condition_start_date
+    target: observation_date
     transform: date
     optional: true
   - source: EffectiveTime.Low|EffectiveTime.Value
-    target: condition_start_datetime
-    transform: time_ptr
-    optional: true
-  - source: EffectiveTime.High
-    target: condition_end_date
-    transform: time_ptr
-    optional: true
-  - source: EffectiveTime.High
-    target: condition_end_datetime
+    target: observation_datetime
     transform: time_ptr
     optional: true
   - source: Code
-    target: condition_source_value
+    target: observation_source_value
     transform: format_source
 id_gen:
   base_fields:
     - Code.Code
     - EffectiveTime.Low
-  generator: condition
+  generator: observation

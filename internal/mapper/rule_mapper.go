@@ -73,27 +73,29 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 		log.Printf("Mapped %d encounters", len(doc.Encounters))
 	}
 
-	// Map problems using rules with domain-aware routing
-	if rule := m.getRuleBySection("Problems"); rule != nil {
-		conditions, err := m.mapWithRuleAndMeta(*rule, doc.Problems, personID, visitMap, doc.SectionMeta)
-		if err != nil {
-			return nil, err
-		}
+	// Map problems using rules with conditional filtering
+	problemRules := m.getRulesBySection("Problems")
+	if len(problemRules) > 0 {
 		conditionCount := 0
 		observationCount := 0
-		for _, c := range conditions {
-			conceptID := getInt64(c, "condition_concept_id")
-			domain := m.engine.vocab.GetConceptDomain(conceptID)
-			if domain == "Observation" {
-				data.Observations = append(data.Observations, m.conditionToObservation(c))
-				observationCount++
-			} else {
-				data.ConditionOccurrences = append(data.ConditionOccurrences, m.toConditionOccurrence(c))
-				conditionCount++
+		for _, rule := range problemRules {
+			results, err := m.mapWithRuleAndMeta(rule, doc.Problems, personID, visitMap, doc.SectionMeta)
+			if err != nil {
+				return nil, err
+			}
+			for _, r := range results {
+				switch rule.Target.Table {
+				case "condition_occurrence":
+					data.ConditionOccurrences = append(data.ConditionOccurrences, m.toConditionOccurrence(r))
+					conditionCount++
+				case "observation":
+					data.Observations = append(data.Observations, m.toObservation(r))
+					observationCount++
+				}
 			}
 		}
 		if m.verbose {
-			log.Printf("Mapped %d problems: %d to condition, %d to observation (domain-aware)", len(doc.Problems), conditionCount, observationCount)
+			log.Printf("Mapped %d problems: %d to condition, %d to observation (conditional)", len(doc.Problems), conditionCount, observationCount)
 		}
 	}
 
@@ -125,135 +127,141 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 		}
 	}
 
-	// Map procedures using rules with domain-aware routing
-	if rule := m.getRuleBySection("Procedures"); rule != nil {
-		procs, err := m.mapWithRuleAndMeta(*rule, doc.Procedures, personID, visitMap, doc.SectionMeta)
-		if err != nil {
-			return nil, err
-		}
+	// Map procedures using rules with conditional filtering
+	procedureRules := m.getRulesBySection("Procedures")
+	if len(procedureRules) > 0 {
 		procedureCount := 0
 		measurementCount := 0
 		observationCount := 0
-		for _, p := range procs {
-			conceptID := getInt64(p, "procedure_concept_id")
-			domain := m.engine.vocab.GetConceptDomain(conceptID)
-			switch domain {
-			case "Measurement":
-				data.Measurements = append(data.Measurements, m.procedureToMeasurement(p))
-				measurementCount++
-			case "Observation":
-				data.Observations = append(data.Observations, m.procedureToObservation(p))
-				observationCount++
-			default:
-				data.ProcedureOccurrences = append(data.ProcedureOccurrences, m.toProcedureOccurrence(p))
-				procedureCount++
+		for _, rule := range procedureRules {
+			results, err := m.mapWithRuleAndMeta(rule, doc.Procedures, personID, visitMap, doc.SectionMeta)
+			if err != nil {
+				return nil, err
+			}
+			for _, r := range results {
+				switch rule.Target.Table {
+				case "procedure_occurrence":
+					data.ProcedureOccurrences = append(data.ProcedureOccurrences, m.toProcedureOccurrence(r))
+					procedureCount++
+				case "measurement":
+					data.Measurements = append(data.Measurements, m.toMeasurement(r))
+					measurementCount++
+				case "observation":
+					data.Observations = append(data.Observations, m.toObservation(r))
+					observationCount++
+				}
 			}
 		}
 		if m.verbose {
-			log.Printf("Mapped %d procedures: %d to procedure, %d to measurement, %d to observation (domain-aware)", len(doc.Procedures), procedureCount, measurementCount, observationCount)
+			log.Printf("Mapped %d procedures: %d to procedure, %d to measurement, %d to observation (conditional)", len(doc.Procedures), procedureCount, measurementCount, observationCount)
 		}
 	}
 
-	// Map vital signs using rules with domain-aware routing
-	if rule := m.getRuleBySection("VitalSigns"); rule != nil {
-		vitals, err := m.mapWithRuleAndMeta(*rule, doc.VitalSigns, personID, visitMap, doc.SectionMeta)
-		if err != nil {
-			return nil, err
-		}
+	// Map vital signs using rules with conditional filtering
+	vitalRules := m.getRulesBySection("VitalSigns")
+	if len(vitalRules) > 0 {
 		measurementCount := 0
 		observationCount := 0
-		for _, v := range vitals {
-			conceptID := getInt64(v, "measurement_concept_id")
-			domain := m.engine.vocab.GetConceptDomain(conceptID)
-			if domain == "Observation" {
-				data.Observations = append(data.Observations, m.measurementToObservation(v))
-				observationCount++
-			} else {
-				data.Measurements = append(data.Measurements, m.toMeasurement(v))
-				measurementCount++
+		for _, rule := range vitalRules {
+			results, err := m.mapWithRuleAndMeta(rule, doc.VitalSigns, personID, visitMap, doc.SectionMeta)
+			if err != nil {
+				return nil, err
+			}
+			for _, r := range results {
+				switch rule.Target.Table {
+				case "measurement":
+					data.Measurements = append(data.Measurements, m.toMeasurement(r))
+					measurementCount++
+				case "observation":
+					data.Observations = append(data.Observations, m.toObservation(r))
+					observationCount++
+				}
 			}
 		}
 		if m.verbose {
-			log.Printf("Mapped %d vital signs: %d to measurement, %d to observation (domain-aware)", len(doc.VitalSigns), measurementCount, observationCount)
+			log.Printf("Mapped %d vital signs: %d to measurement, %d to observation (conditional)", len(doc.VitalSigns), measurementCount, observationCount)
 		}
 	}
 
-	// Map lab results using rules with domain-aware routing
-	if rule := m.getRuleBySection("LabResults"); rule != nil {
-		labs, err := m.mapWithRuleAndMeta(*rule, doc.LabResults, personID, visitMap, doc.SectionMeta)
-		if err != nil {
-			return nil, err
-		}
+	// Map lab results using rules with conditional filtering
+	labRules := m.getRulesBySection("LabResults")
+	if len(labRules) > 0 {
 		measurementCount := 0
 		observationCount := 0
-		for _, l := range labs {
-			conceptID := getInt64(l, "measurement_concept_id")
-			domain := m.engine.vocab.GetConceptDomain(conceptID)
-			if domain == "Observation" {
-				// Route to observation table
-				data.Observations = append(data.Observations, m.labToObservation(l))
-				observationCount++
-			} else {
-				// Default to measurement table
-				data.Measurements = append(data.Measurements, m.toMeasurement(l))
-				measurementCount++
+		for _, rule := range labRules {
+			results, err := m.mapWithRuleAndMeta(rule, doc.LabResults, personID, visitMap, doc.SectionMeta)
+			if err != nil {
+				return nil, err
+			}
+			for _, r := range results {
+				switch rule.Target.Table {
+				case "measurement":
+					data.Measurements = append(data.Measurements, m.toMeasurement(r))
+					measurementCount++
+				case "observation":
+					data.Observations = append(data.Observations, m.toObservation(r))
+					observationCount++
+				}
 			}
 		}
 		if m.verbose {
-			log.Printf("Mapped %d lab results: %d to measurement, %d to observation (domain-aware)", len(doc.LabResults), measurementCount, observationCount)
+			log.Printf("Mapped %d lab results: %d to measurement, %d to observation (conditional)", len(doc.LabResults), measurementCount, observationCount)
 		}
 	}
 
-	// Map allergies using rules with domain-aware routing
-	if rule := m.getRuleBySection("Allergies"); rule != nil {
-		allergies, err := m.mapWithRuleAndMeta(*rule, doc.Allergies, personID, visitMap, doc.SectionMeta)
-		if err != nil {
-			return nil, err
-		}
+	// Map allergies using rules with conditional filtering
+	allergyRules := m.getRulesBySection("Allergies")
+	if len(allergyRules) > 0 {
 		observationCount := 0
 		conditionCount := 0
-		for _, a := range allergies {
-			conceptID := getInt64(a, "observation_concept_id")
-			domain := m.engine.vocab.GetConceptDomain(conceptID)
-			if domain == "Condition" {
-				data.ConditionOccurrences = append(data.ConditionOccurrences, m.observationToCondition(a))
-				conditionCount++
-			} else {
-				data.Observations = append(data.Observations, m.toObservation(a))
-				observationCount++
+		for _, rule := range allergyRules {
+			results, err := m.mapWithRuleAndMeta(rule, doc.Allergies, personID, visitMap, doc.SectionMeta)
+			if err != nil {
+				return nil, err
+			}
+			for _, r := range results {
+				switch rule.Target.Table {
+				case "observation":
+					data.Observations = append(data.Observations, m.toObservation(r))
+					observationCount++
+				case "condition_occurrence":
+					data.ConditionOccurrences = append(data.ConditionOccurrences, m.toConditionOccurrence(r))
+					conditionCount++
+				}
 			}
 		}
 		if m.verbose {
-			log.Printf("Mapped %d allergies: %d to observation, %d to condition (domain-aware)", len(doc.Allergies), observationCount, conditionCount)
+			log.Printf("Mapped %d allergies: %d to observation, %d to condition (conditional)", len(doc.Allergies), observationCount, conditionCount)
 		}
 	}
 
-	// Map social observations using rules with domain-aware routing
-	if rule := m.getRuleBySection("Observations"); rule != nil {
-		socialObs, err := m.mapWithRuleAndMeta(*rule, doc.Observations, personID, visitMap, doc.SectionMeta)
-		if err != nil {
-			return nil, err
-		}
+	// Map social observations using rules with conditional filtering
+	socialRules := m.getRulesBySection("Observations")
+	if len(socialRules) > 0 {
 		observationCount := 0
 		measurementCount := 0
 		conditionCount := 0
-		for _, o := range socialObs {
-			conceptID := getInt64(o, "observation_concept_id")
-			domain := m.engine.vocab.GetConceptDomain(conceptID)
-			switch domain {
-			case "Measurement":
-				data.Measurements = append(data.Measurements, m.observationToMeasurement(o))
-				measurementCount++
-			case "Condition":
-				data.ConditionOccurrences = append(data.ConditionOccurrences, m.observationToCondition(o))
-				conditionCount++
-			default:
-				data.Observations = append(data.Observations, m.toObservation(o))
-				observationCount++
+		for _, rule := range socialRules {
+			results, err := m.mapWithRuleAndMeta(rule, doc.Observations, personID, visitMap, doc.SectionMeta)
+			if err != nil {
+				return nil, err
+			}
+			for _, r := range results {
+				switch rule.Target.Table {
+				case "observation":
+					data.Observations = append(data.Observations, m.toObservation(r))
+					observationCount++
+				case "measurement":
+					data.Measurements = append(data.Measurements, m.toMeasurement(r))
+					measurementCount++
+				case "condition_occurrence":
+					data.ConditionOccurrences = append(data.ConditionOccurrences, m.toConditionOccurrence(r))
+					conditionCount++
+				}
 			}
 		}
 		if m.verbose {
-			log.Printf("Mapped %d social observations: %d to observation, %d to measurement, %d to condition (domain-aware)", len(doc.Observations), observationCount, measurementCount, conditionCount)
+			log.Printf("Mapped %d social observations: %d to observation, %d to measurement, %d to condition (conditional)", len(doc.Observations), observationCount, measurementCount, conditionCount)
 		}
 	}
 
@@ -282,6 +290,17 @@ func (m *RuleBasedMapper) getRuleBySection(section string) *MappingRule {
 		}
 	}
 	return nil
+}
+
+// getRulesBySection returns all rules matching a section name
+func (m *RuleBasedMapper) getRulesBySection(section string) []MappingRule {
+	var rules []MappingRule
+	for _, rule := range m.rules {
+		if rule.Source.Section == section {
+			rules = append(rules, rule)
+		}
+	}
+	return rules
 }
 
 // mapWithRule applies a rule to a slice of entries
