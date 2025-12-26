@@ -13,9 +13,11 @@ fields:
   - source: EffectiveTime.Low|EffectiveTime.Value
     target: condition_start_date
     transform: date
+    optional: true
   - source: EffectiveTime.Low|EffectiveTime.Value
     target: condition_start_datetime
     transform: time_ptr
+    optional: true
   - source: EffectiveTime.High
     target: condition_end_date
     transform: time_ptr

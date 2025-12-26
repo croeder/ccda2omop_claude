@@ -13,15 +13,19 @@ fields:
   - source: EffectiveTime
     target: drug_exposure_start_date
     transform: date
+    optional: true
   - source: EffectiveTime
     target: drug_exposure_start_datetime
     transform: time_ptr
+    optional: true
   - source: EffectiveTime
     target: drug_exposure_end_date
     transform: date
+    optional: true
   - source: EffectiveTime
     target: drug_exposure_end_datetime
     transform: time_ptr
+    optional: true
   - source: Code
     target: drug_source_value
     transform: format_source

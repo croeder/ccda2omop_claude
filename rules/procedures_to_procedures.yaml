@@ -13,9 +13,11 @@ fields:
   - source: EffectiveTime.Low|EffectiveTime.Value
     target: procedure_date
     transform: date
+    optional: true
   - source: EffectiveTime.Low|EffectiveTime.Value
     target: procedure_datetime
     transform: time_ptr
+    optional: true
   - source: Code
     target: procedure_source_value
     transform: format_source

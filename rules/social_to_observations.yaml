@@ -13,15 +13,22 @@ fields:
   - source: EffectiveTime.Low|EffectiveTime.Value
     target: observation_date
     transform: date
+    optional: true
   - source: EffectiveTime.Low|EffectiveTime.Value
     target: observation_datetime
     transform: time_ptr
+    optional: true
   - source: Code
     target: observation_source_value
     transform: format_source
   - source: Value.DisplayName
     target: value_as_string
     transform: string
+    optional: true
+  - source: Value.Code
+    target: value_as_concept_id
+    transform: value_vocab
+    vocab_field: Value.CodeSystem
     optional: true
   - source: ValueQuantity.Value
     target: value_as_number

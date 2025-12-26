@@ -13,9 +13,11 @@ fields:
   - source: EffectiveTime
     target: measurement_date
     transform: date
+    optional: true
   - source: EffectiveTime
     target: measurement_datetime
     transform: time_ptr
+    optional: true
   - source: Code
     target: measurement_source_value
     transform: format_source
@@ -34,6 +36,11 @@ fields:
   - source: Value
     target: value_source_value
     transform: string
+    optional: true
+  - source: Interpretation.Code
+    target: value_as_concept_id
+    transform: value_vocab
+    vocab_field: Interpretation.CodeSystem
     optional: true
 id_gen:
   base_fields:

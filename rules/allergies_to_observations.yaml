@@ -27,6 +27,11 @@ fields:
     target: value_as_string
     transform: string
     optional: true
+  - source: Reaction.Code
+    target: value_as_concept_id
+    transform: value_vocab
+    vocab_field: Reaction.CodeSystem
+    optional: true
   - source: Severity.DisplayName
     target: qualifier_source_value
     transform: string

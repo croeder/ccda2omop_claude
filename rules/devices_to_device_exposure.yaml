@@ -13,9 +13,11 @@ fields:
   - source: EffectiveTime.Low|EffectiveTime.Value
     target: device_exposure_start_date
     transform: date
+    optional: true
   - source: EffectiveTime.Low|EffectiveTime.Value
     target: device_exposure_start_datetime
     transform: time_ptr
+    optional: true
   - source: EffectiveTime.High
     target: device_exposure_end_date
     transform: time_ptr
