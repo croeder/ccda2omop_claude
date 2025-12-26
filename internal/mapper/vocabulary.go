@@ -332,6 +332,15 @@ func (v *VocabularyMapper) MapMeasurementValueCode(code, codeSystem string) int6
 	return v.vocabLoader.GetStandardConceptID(vocabID, code)
 }
 
+// GetConceptDomain returns the domain_id for a concept
+// Returns empty string if no vocab loader or concept not found
+func (v *VocabularyMapper) GetConceptDomain(conceptID int64) string {
+	if v.vocabLoader == nil {
+		return ""
+	}
+	return v.vocabLoader.GetConceptDomain(conceptID)
+}
+
 // GetCodeSystemName returns a human-readable name for a code system OID
 func GetCodeSystemName(oid string) string {
 	switch oid {

@@ -225,6 +225,15 @@ func (vl *VocabLoader) GetStandardConceptID(vocabID, code string) int64 {
 	return 0
 }
 
+// GetConceptDomain returns the domain_id for a concept
+// Returns empty string if concept not found
+func (vl *VocabLoader) GetConceptDomain(conceptID int64) string {
+	if concept := vl.conceptByID[conceptID]; concept != nil {
+		return concept.DomainID
+	}
+	return ""
+}
+
 // GetStandardConceptIDs returns all standard concept IDs for a source concept
 // A single source concept can map to multiple standard concepts
 func (vl *VocabLoader) GetStandardConceptIDs(vocabID, code string) []int64 {

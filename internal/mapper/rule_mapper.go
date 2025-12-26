@@ -143,17 +143,29 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 		}
 	}
 
-	// Map lab results using rules
+	// Map lab results using rules with domain-aware routing
 	if rule := m.getRuleBySection("LabResults"); rule != nil {
 		labs, err := m.mapWithRuleAndMeta(*rule, doc.LabResults, personID, visitMap, doc.SectionMeta)
 		if err != nil {
 			return nil, err
 		}
+		measurementCount := 0
+		observationCount := 0
 		for _, l := range labs {
-			data.Measurements = append(data.Measurements, m.toMeasurement(l))
+			conceptID := getInt64(l, "measurement_concept_id")
+			domain := m.engine.vocab.GetConceptDomain(conceptID)
+			if domain == "Observation" {
+				// Route to observation table
+				data.Observations = append(data.Observations, m.labToObservation(l))
+				observationCount++
+			} else {
+				// Default to measurement table
+				data.Measurements = append(data.Measurements, m.toMeasurement(l))
+				measurementCount++
+			}
 		}
 		if m.verbose {
-			log.Printf("Mapped %d lab results to %d measurement records (rule-based)", len(doc.LabResults), len(labs))
+			log.Printf("Mapped %d lab results: %d to measurement, %d to observation (domain-aware)", len(doc.LabResults), measurementCount, observationCount)
 		}
 	}
 
@@ -353,6 +365,39 @@ func (m *RuleBasedMapper) toMeasurement(record map[string]interface{}) omop.Meas
 	}
 
 	return meas
+}
+
+// labToObservation converts a lab result (mapped as measurement) to an observation
+// Used for domain-aware routing when lab concept's domain is "Observation"
+func (m *RuleBasedMapper) labToObservation(record map[string]interface{}) omop.Observation {
+	obs := omop.Observation{
+		ObservationID:            getInt64(record, "measurement_id"),
+		PersonID:                 getInt64(record, "person_id"),
+		ObservationConceptID:     getInt64(record, "measurement_concept_id"),
+		ObservationTypeConceptID: getInt64(record, "measurement_type_concept_id"),
+		ObservationSourceValue:   getString(record, "measurement_source_value"),
+		UnitSourceValue:          getString(record, "unit_source_value"),
+		MappingRule:              getString(record, "mapping_rule") + ":DomainRouted",
+	}
+
+	if v, ok := record["measurement_date"].(time.Time); ok {
+		obs.ObservationDate = v
+	}
+	if v := getTimePtr(record, "measurement_datetime"); v != nil {
+		obs.ObservationDatetime = v
+	}
+	if v := getFloat64Ptr(record, "value_as_number"); v != nil {
+		obs.ValueAsNumber = v
+	}
+	if v := getInt64Ptr(record, "value_as_concept_id"); v != nil {
+		obs.ValueAsConceptID = v
+	}
+	// Convert value_source_value to value_as_string for observation
+	if v := getString(record, "value_source_value"); v != "" {
+		obs.ValueAsString = v
+	}
+
+	return obs
 }
 
 func (m *RuleBasedMapper) toObservation(record map[string]interface{}) omop.Observation {
