@@ -92,11 +92,16 @@ func main() {
 		RulesFile:        *rulesFile,
 	}
 
-	if err := converter.RunBatch(xmlFiles, cfg); err != nil {
+	stats, err := converter.RunBatch(xmlFiles, cfg)
+	if err != nil {
 		log.Fatalf("Conversion failed: %v", err)
 	}
 
 	fmt.Printf("Conversion complete. Processed %d file(s). Output written to: %s\n", len(xmlFiles), *outputDir)
+	fmt.Printf("  %d person, %d visit, %d condition, %d drug, %d procedure, %d measurement, %d observation, %d device\n",
+		stats.Persons, stats.VisitOccurrences, stats.ConditionOccurrences,
+		stats.DrugExposures, stats.ProcedureOccurrences, stats.Measurements,
+		stats.Observations, stats.DeviceExposures)
 }
 
 // loadSupplementaryVocabs loads all CSV files from a directory as supplementary vocabularies

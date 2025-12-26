@@ -25,6 +25,18 @@ type Config struct {
 	RulesFile        string // Path to YAML rules file (optional, uses Go-defined rules if empty)
 }
 
+// ConversionSummary holds counts of records created during conversion
+type ConversionSummary struct {
+	Persons              int
+	VisitOccurrences     int
+	ConditionOccurrences int
+	DrugExposures        int
+	ProcedureOccurrences int
+	Measurements         int
+	Observations         int
+	DeviceExposures      int
+}
+
 // Shared vocab loader for batch processing
 var sharedVocabLoader *mapper.VocabLoader
 
@@ -91,17 +103,17 @@ func loadSupplementaryVocabs(vocabLoader *mapper.VocabLoader, dir string, verbos
 }
 
 // RunBatch processes multiple C-CDA files and aggregates results into a single output
-func RunBatch(files []string, cfg Config) error {
+func RunBatch(files []string, cfg Config) (*ConversionSummary, error) {
 	// Load vocabulary if specified and not already loaded
 	if cfg.ConceptFile != "" && sharedVocabLoader == nil {
 		if err := LoadVocabulary(cfg.ConceptFile, cfg.RelationshipFile, cfg.VocabDir, cfg.Verbose); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	// Create output directory if it doesn't exist
 	if err := os.MkdirAll(cfg.OutputDir, 0755); err != nil {
-		return fmt.Errorf("failed to create output directory: %w", err)
+		return nil, fmt.Errorf("failed to create output directory: %w", err)
 	}
 
 	// Aggregate all OMOP data
@@ -114,7 +126,7 @@ func RunBatch(files []string, cfg Config) error {
 
 		omopData, err := processFile(inputFile, cfg)
 		if err != nil {
-			return fmt.Errorf("failed to process %s: %w", inputFile, err)
+			return nil, fmt.Errorf("failed to process %s: %w", inputFile, err)
 		}
 
 		// Set source file on all records (use base filename for readability)
@@ -135,21 +147,33 @@ func RunBatch(files []string, cfg Config) error {
 	// Write aggregated OMOP CSV files
 	writer := omop.NewCSVWriter(cfg.OutputDir)
 	if err := writer.WriteAll(aggregatedData); err != nil {
-		return fmt.Errorf("failed to write OMOP CSV files: %w", err)
+		return nil, fmt.Errorf("failed to write OMOP CSV files: %w", err)
+	}
+
+	// Build summary
+	summary := &ConversionSummary{
+		Persons:              len(aggregatedData.Persons),
+		VisitOccurrences:     len(aggregatedData.VisitOccurrences),
+		ConditionOccurrences: len(aggregatedData.ConditionOccurrences),
+		DrugExposures:        len(aggregatedData.DrugExposures),
+		ProcedureOccurrences: len(aggregatedData.ProcedureOccurrences),
+		Measurements:         len(aggregatedData.Measurements),
+		Observations:         len(aggregatedData.Observations),
+		DeviceExposures:      len(aggregatedData.DeviceExposures),
 	}
 
 	if cfg.Verbose {
-		log.Printf("Wrote %d person records", len(aggregatedData.Persons))
-		log.Printf("Wrote %d visit_occurrence records", len(aggregatedData.VisitOccurrences))
-		log.Printf("Wrote %d condition_occurrence records", len(aggregatedData.ConditionOccurrences))
-		log.Printf("Wrote %d drug_exposure records", len(aggregatedData.DrugExposures))
-		log.Printf("Wrote %d procedure_occurrence records", len(aggregatedData.ProcedureOccurrences))
-		log.Printf("Wrote %d measurement records", len(aggregatedData.Measurements))
-		log.Printf("Wrote %d observation records", len(aggregatedData.Observations))
-		log.Printf("Wrote %d device_exposure records", len(aggregatedData.DeviceExposures))
+		log.Printf("Wrote %d person records", summary.Persons)
+		log.Printf("Wrote %d visit_occurrence records", summary.VisitOccurrences)
+		log.Printf("Wrote %d condition_occurrence records", summary.ConditionOccurrences)
+		log.Printf("Wrote %d drug_exposure records", summary.DrugExposures)
+		log.Printf("Wrote %d procedure_occurrence records", summary.ProcedureOccurrences)
+		log.Printf("Wrote %d measurement records", summary.Measurements)
+		log.Printf("Wrote %d observation records", summary.Observations)
+		log.Printf("Wrote %d device_exposure records", summary.DeviceExposures)
 	}
 
-	return nil
+	return summary, nil
 }
 
 // processFile processes a single C-CDA file and returns OMOP data without writing
