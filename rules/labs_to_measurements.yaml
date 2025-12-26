@@ -3,8 +3,8 @@ source:
   section: LabResults
   entry_type: LabResult
   conditions:
-    - type: domain_not_equals
-      value: Observation
+    - type: domain_equals
+      value: Measurement
 target:
   table: measurement
   type_concept_id: 32817

@@ -3,10 +3,8 @@ source:
   section: Observations
   entry_type: SocialObservation
   conditions:
-    - type: domain_not_equals
-      value: Measurement
-    - type: domain_not_equals
-      value: Condition
+    - type: domain_equals
+      value: Observation
 target:
   table: observation
   type_concept_id: 32817

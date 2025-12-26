@@ -3,10 +3,8 @@ source:
   section: Procedures
   entry_type: Procedure
   conditions:
-    - type: domain_not_equals
-      value: Measurement
-    - type: domain_not_equals
-      value: Observation
+    - type: domain_equals
+      value: Procedure
 target:
   table: procedure_occurrence
   type_concept_id: 32817

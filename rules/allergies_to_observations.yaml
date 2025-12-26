@@ -3,8 +3,8 @@ source:
   section: Allergies
   entry_type: Allergy
   conditions:
-    - type: domain_not_equals
-      value: Condition
+    - type: domain_equals
+      value: Observation
 target:
   table: observation
   type_concept_id: 32817
