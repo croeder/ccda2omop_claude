@@ -12,17 +12,17 @@ import (
 
 // RuleBasedMapper uses declarative rules to transform C-CDA documents to OMOP
 type RuleBasedMapper struct {
-	engine  *RuleEngine
-	rules   []MappingRule
-	verbose bool
+	engine         *RuleEngine
+	rulesBySection map[string][]MappingRule
+	verbose        bool
 }
 
 // NewRuleBasedMapper creates a new rule-based mapper with default Go-defined rules
 func NewRuleBasedMapper(vocab *VocabularyMapper, verbose bool) *RuleBasedMapper {
 	return &RuleBasedMapper{
-		engine:  NewRuleEngine(vocab, verbose),
-		rules:   AllRules, // Use Go-defined rules as default
-		verbose: verbose,
+		engine:         NewRuleEngine(vocab, verbose),
+		rulesBySection: IndexRulesBySection(AllRules),
+		verbose:        verbose,
 	}
 }
 
@@ -39,9 +39,9 @@ func NewRuleBasedMapperFromYAML(rulesFile string, vocab *VocabularyMapper, verbo
 		return nil, err
 	}
 	return &RuleBasedMapper{
-		engine:  NewRuleEngine(vocab, verbose),
-		rules:   rules,
-		verbose: verbose,
+		engine:         NewRuleEngine(vocab, verbose),
+		rulesBySection: IndexRulesBySection(rules),
+		verbose:        verbose,
 	}, nil
 }
 
@@ -284,23 +284,15 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 
 // getRuleBySection returns a rule by section name from the loaded rules
 func (m *RuleBasedMapper) getRuleBySection(section string) *MappingRule {
-	for i := range m.rules {
-		if m.rules[i].Source.Section == section {
-			return &m.rules[i]
-		}
+	if rules, ok := m.rulesBySection[section]; ok && len(rules) > 0 {
+		return &rules[0]
 	}
 	return nil
 }
 
 // getRulesBySection returns all rules matching a section name
 func (m *RuleBasedMapper) getRulesBySection(section string) []MappingRule {
-	var rules []MappingRule
-	for _, rule := range m.rules {
-		if rule.Source.Section == section {
-			rules = append(rules, rule)
-		}
-	}
-	return rules
+	return m.rulesBySection[section]
 }
 
 // mapWithRule applies a rule to a slice of entries

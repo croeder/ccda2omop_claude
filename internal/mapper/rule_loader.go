@@ -183,6 +183,16 @@ func convertYAMLRule(yr YAMLRule) MappingRule {
 	}
 }
 
+// IndexRulesBySection converts a slice of rules to a map keyed by section name
+func IndexRulesBySection(rules []MappingRule) map[string][]MappingRule {
+	result := make(map[string][]MappingRule)
+	for _, rule := range rules {
+		section := rule.Source.Section
+		result[section] = append(result[section], rule)
+	}
+	return result
+}
+
 // GetRuleBySectionFromList returns a rule by section name from a list of rules
 func GetRuleBySectionFromList(rules []MappingRule, section string) *MappingRule {
 	for i := range rules {
