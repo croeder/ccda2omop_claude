@@ -5,82 +5,65 @@ source:
   section_oid_entries_required: "2.16.840.1.113883.10.20.22.2.1.1"
   entry_xpath: "entry/substanceAdministration"
   entry_type: Medication
-  extraction:
-    - field: Code
-      xpath: "consumable/manufacturedProduct/manufacturedMaterial/code"
-      type: code
-    - field: EffectiveTime
-      xpath: "effectiveTime"
-      type: effective_time
-    - field: Status
-      xpath: "statusCode"
-      type: code
-    - field: RouteCode
-      xpath: "routeCode"
-      type: code
-    - field: DoseQuantity
-      xpath: "doseQuantity"
-      type: quantity
-    - field: RateQuantity
-      xpath: "rateQuantity"
-      type: quantity
-    - field: DaysSupply
-      xpath: "entryRelationship/supply/quantity/@value"
-      type: int
 target:
   table: drug_exposure
   type_concept_id: 32817
 fields:
-  - source: Code.Code
-    target: drug_concept_id
+  - target: drug_concept_id
+    xpath: "consumable/manufacturedProduct/manufacturedMaterial/code/@code"
+    vocab_xpath: "consumable/manufacturedProduct/manufacturedMaterial/code/@codeSystem"
     transform: vocab
-    vocab_field: Code.CodeSystem
-  - source: EffectiveTime.Low|EffectiveTime.Value
-    target: drug_exposure_start_date
+  - target: drug_exposure_start_date
+    xpath: "effectiveTime/low/@value"
+    fallback_xpath: "effectiveTime/@value"
     transform: date
     optional: true
-  - source: EffectiveTime.Low|EffectiveTime.Value
-    target: drug_exposure_start_datetime
+  - target: drug_exposure_start_datetime
+    xpath: "effectiveTime/low/@value"
+    fallback_xpath: "effectiveTime/@value"
     transform: time_ptr
     optional: true
-  - source: EffectiveTime.High|EffectiveTime.Low|EffectiveTime.Value
-    target: drug_exposure_end_date
+  - target: drug_exposure_end_date
+    xpath: "effectiveTime/high/@value"
+    fallback_xpath: "effectiveTime/low/@value"
     transform: date
     optional: true
-  - source: EffectiveTime.High|EffectiveTime.Low|EffectiveTime.Value
-    target: drug_exposure_end_datetime
+  - target: drug_exposure_end_datetime
+    xpath: "effectiveTime/high/@value"
+    fallback_xpath: "effectiveTime/low/@value"
     transform: time_ptr
     optional: true
-  - source: Code
-    target: drug_source_value
-    transform: format_source
-  - source: RouteCode.DisplayName
-    target: route_source_value
+  - target: drug_source_value
+    xpath: "consumable/manufacturedProduct/manufacturedMaterial/code/@displayName"
+    fallback_xpath: "consumable/manufacturedProduct/manufacturedMaterial/code/@code"
+    transform: string
+  - target: route_source_value
+    xpath: "routeCode/@displayName"
     transform: string
     optional: true
-  - source: RouteCode.Code
-    target: route_concept_id
+  - target: route_concept_id
+    xpath: "routeCode/@code"
+    vocab_xpath: "routeCode/@codeSystem"
     transform: route
-    vocab_field: RouteCode.CodeSystem
     optional: true
-  - source: DoseQuantity.Value
-    target: quantity
+  - target: quantity
+    xpath: "doseQuantity/@value"
     transform: float
     optional: true
-  - source: DoseQuantity.Unit
-    target: dose_unit_source_value
+  - target: dose_unit_source_value
+    xpath: "doseQuantity/@unit"
     transform: string
     optional: true
-  - source: DaysSupply
-    target: days_supply
+  - target: days_supply
+    xpath: "entryRelationship/supply/quantity/@value"
     transform: int
     optional: true
-  - source: Refills
-    target: refills
+  - target: refills
+    xpath: "repeatNumber/@value"
     transform: int
     optional: true
-  - source: Instructions
-    target: sig
+  - target: sig
+    xpath: "text"
     transform: string
     optional: true
 id_gen:

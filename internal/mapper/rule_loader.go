@@ -59,11 +59,15 @@ type YAMLTargetSpec struct {
 
 // YAMLField represents a field mapping in YAML
 type YAMLField struct {
-	Source     string `yaml:"source"`
-	Target     string `yaml:"target"`
-	Transform  string `yaml:"transform"`
+	Target       string `yaml:"target"`
+	XPath        string `yaml:"xpath"`                   // Primary xpath expression
+	FallbackXPath string `yaml:"fallback_xpath,omitempty"` // Fallback xpath if primary returns nil
+	VocabXPath   string `yaml:"vocab_xpath,omitempty"`   // XPath for code system (vocab lookups)
+	Transform    string `yaml:"transform"`
+	Optional     bool   `yaml:"optional,omitempty"`
+	// Deprecated: Use XPath instead
+	Source     string `yaml:"source,omitempty"`
 	VocabField string `yaml:"vocab_field,omitempty"`
-	Optional   bool   `yaml:"optional,omitempty"`
 }
 
 // YAMLIDGenSpec represents ID generation specification in YAML
@@ -158,11 +162,15 @@ func convertYAMLRule(yr YAMLRule) MappingRule {
 	fields := make([]FieldMapping, 0, len(yr.Fields))
 	for _, yf := range yr.Fields {
 		fields = append(fields, FieldMapping{
+			Target:        yf.Target,
+			XPath:         yf.XPath,
+			FallbackXPath: yf.FallbackXPath,
+			VocabXPath:    yf.VocabXPath,
+			Transform:     yf.Transform,
+			Optional:      yf.Optional,
+			// Deprecated fields for backward compatibility
 			Source:     yf.Source,
-			Target:     yf.Target,
-			Transform:  yf.Transform,
 			VocabField: yf.VocabField,
-			Optional:   yf.Optional,
 		})
 	}
 

@@ -5,6 +5,8 @@ package ccda
 import (
 	"encoding/xml"
 	"time"
+
+	"github.com/antchfx/xmlquery"
 )
 
 // SectionMetadata contains metadata about a parsed C-CDA section
@@ -32,6 +34,9 @@ type Document struct {
 
 	// Section metadata - tracks which template type was used for each section
 	SectionMeta map[string]SectionMetadata
+
+	// XMLRoot stores the raw XML root node for xpath-based extraction
+	XMLRoot *xmlquery.Node
 }
 
 // Patient represents patient demographics from the C-CDA recordTarget

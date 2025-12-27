@@ -5,19 +5,6 @@ source:
   section_oid_entries_required: "2.16.840.1.113883.10.20.22.2.5.1"
   entry_xpath: "entry/act/entryRelationship/observation"
   entry_type: Problem
-  extraction:
-    - field: Code
-      xpath: "value"
-      type: code
-    - field: CodeFallback
-      xpath: "code"
-      type: code
-    - field: EffectiveTime
-      xpath: "effectiveTime"
-      type: effective_time
-    - field: Status
-      xpath: "statusCode"
-      type: code
   conditions:
     - type: domain_equals
       value: Condition
@@ -25,29 +12,33 @@ target:
   table: condition_occurrence
   type_concept_id: 32817
 fields:
-  - source: Code.Code|CodeFallback.Code
-    target: condition_concept_id
+  - target: condition_concept_id
+    xpath: "value/@code"
+    fallback_xpath: "code/@code"
+    vocab_xpath: "value/@codeSystem"
     transform: vocab
-    vocab_field: Code.CodeSystem|CodeFallback.CodeSystem
-  - source: EffectiveTime.Low|EffectiveTime.Value
-    target: condition_start_date
+  - target: condition_start_date
+    xpath: "effectiveTime/low/@value"
+    fallback_xpath: "effectiveTime/@value"
     transform: date
     optional: true
-  - source: EffectiveTime.Low|EffectiveTime.Value
-    target: condition_start_datetime
+  - target: condition_start_datetime
+    xpath: "effectiveTime/low/@value"
+    fallback_xpath: "effectiveTime/@value"
     transform: time_ptr
     optional: true
-  - source: EffectiveTime.High
-    target: condition_end_date
+  - target: condition_end_date
+    xpath: "effectiveTime/high/@value"
     transform: time_ptr
     optional: true
-  - source: EffectiveTime.High
-    target: condition_end_datetime
+  - target: condition_end_datetime
+    xpath: "effectiveTime/high/@value"
     transform: time_ptr
     optional: true
-  - source: Code|CodeFallback
-    target: condition_source_value
-    transform: format_source
+  - target: condition_source_value
+    xpath: "value/@displayName"
+    fallback_xpath: "code/@displayName"
+    transform: string
 id_gen:
   base_fields:
     - Code.Code

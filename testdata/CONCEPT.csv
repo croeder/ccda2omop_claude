@@ -1,0 +1,20 @@
+concept_id	concept_name	domain_id	vocabulary_id	concept_class_id	standard_concept	concept_code	valid_start_date	valid_end_date	invalid_reason
+201826	Type 2 diabetes mellitus	Condition	SNOMED	Clinical Finding	S	44054006	1970-01-01	2099-12-31	
+320128	Essential hypertension	Condition	SNOMED	Clinical Finding	S	38341003	1970-01-01	2099-12-31	
+4263505	Vital signs	Observation	SNOMED	Clinical Finding	S	46680005	1970-01-01	2099-12-31	
+4170564	Allergy to substance	Observation	SNOMED	Clinical Finding	S	419199007	1970-01-01	2099-12-31	
+4249893	Colonoscopy	Procedure	SNOMED	Procedure	S	73761001	1970-01-01	2099-12-31	
+4044934	Glucose monitor	Device	SNOMED	Physical Object	S	706689003	1970-01-01	2099-12-31	
+4310250	Former smoker	Observation	SNOMED	Clinical Finding	S	8517006	1970-01-01	2099-12-31	
+4145356	Condition	Observation	SNOMED	Clinical Finding	S	64572001	1970-01-01	2099-12-31	
+3004249	Systolic blood pressure	Measurement	LOINC	Clinical Observation	S	8480-6	1970-01-01	2099-12-31	
+3012888	Diastolic blood pressure	Measurement	LOINC	Clinical Observation	S	8462-4	1970-01-01	2099-12-31	
+3027018	Heart rate	Measurement	LOINC	Clinical Observation	S	8867-4	1970-01-01	2099-12-31	
+3025315	Body weight	Measurement	LOINC	Clinical Observation	S	29463-7	1970-01-01	2099-12-31	
+3004410	Hemoglobin A1c	Measurement	LOINC	Clinical Observation	S	4548-4	1970-01-01	2099-12-31	
+3000483	Glucose	Measurement	LOINC	Clinical Observation	S	2345-7	1970-01-01	2099-12-31	
+4041306	Tobacco smoking status	Observation	LOINC	Clinical Observation	S	72166-2	1970-01-01	2099-12-31	
+1503297	Metformin 500 MG Oral Tablet	Drug	RxNorm	Clinical Drug	S	860975	1970-01-01	2099-12-31	
+1308216	Lisinopril 10 MG Oral Tablet	Drug	RxNorm	Clinical Drug	S	314076	1970-01-01	2099-12-31	
+1738521	Penicillin	Drug	RxNorm	Ingredient	S	7980	1970-01-01	2099-12-31	
+45775636	Influenza, seasonal, injectable	Drug	CVX	CVX	S	141	1970-01-01	2099-12-31	

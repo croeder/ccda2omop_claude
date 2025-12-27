@@ -5,22 +5,6 @@ source:
   section_oid_entries_required: "2.16.840.1.113883.10.20.22.2.4.1"
   entry_xpath: "entry/organizer/component/observation"
   entry_type: VitalSign
-  extraction:
-    - field: Code
-      xpath: "code"
-      type: code
-    - field: EffectiveTime
-      xpath: "effectiveTime"
-      type: time
-    - field: Value
-      xpath: "value/@value"
-      type: float
-    - field: Unit
-      xpath: "value/@unit"
-      type: string
-    - field: Interpretation
-      xpath: "interpretationCode"
-      type: code
   conditions:
     - type: domain_equals
       value: Observation
@@ -28,37 +12,38 @@ target:
   table: observation
   type_concept_id: 32817
 fields:
-  - source: Code.Code
-    target: observation_concept_id
+  - target: observation_concept_id
+    xpath: "code/@code"
+    vocab_xpath: "code/@codeSystem"
     transform: vocab
-    vocab_field: Code.CodeSystem
-  - source: EffectiveTime
-    target: observation_date
+  - target: observation_date
+    xpath: "effectiveTime/@value"
     transform: date
     optional: true
-  - source: EffectiveTime
-    target: observation_datetime
+  - target: observation_datetime
+    xpath: "effectiveTime/@value"
     transform: time_ptr
     optional: true
-  - source: Code
-    target: observation_source_value
-    transform: format_source
-  - source: Value
-    target: value_as_number
+  - target: observation_source_value
+    xpath: "code/@displayName"
+    fallback_xpath: "code/@code"
+    transform: string
+  - target: value_as_number
+    xpath: "value/@value"
     transform: float
     optional: true
-  - source: Unit
-    target: unit_source_value
+  - target: unit_source_value
+    xpath: "value/@unit"
     transform: string
     optional: true
-  - source: Value
-    target: value_as_string
+  - target: value_as_string
+    xpath: "value/@value"
     transform: string
     optional: true
-  - source: Interpretation.Code
-    target: value_as_concept_id
+  - target: value_as_concept_id
+    xpath: "interpretationCode/@code"
+    vocab_xpath: "interpretationCode/@codeSystem"
     transform: value_vocab
-    vocab_field: Interpretation.CodeSystem
     optional: true
 id_gen:
   base_fields:

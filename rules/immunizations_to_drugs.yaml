@@ -5,71 +5,53 @@ source:
   section_oid_entries_required: "2.16.840.1.113883.10.20.22.2.2.1"
   entry_xpath: "entry/substanceAdministration"
   entry_type: Immunization
-  extraction:
-    - field: Code
-      xpath: "consumable/manufacturedProduct/manufacturedMaterial/code"
-      type: code
-    - field: EffectiveTime
-      xpath: "effectiveTime"
-      type: time
-    - field: Status
-      xpath: "statusCode"
-      type: code
-    - field: RouteCode
-      xpath: "routeCode"
-      type: code
-    - field: DoseQuantity
-      xpath: "doseQuantity"
-      type: quantity
-    - field: LotNumber
-      xpath: "consumable/manufacturedProduct/manufacturedMaterial/lotNumberText"
-      type: string
 target:
   table: drug_exposure
   type_concept_id: 32817
 fields:
-  - source: Code.Code
-    target: drug_concept_id
+  - target: drug_concept_id
+    xpath: "consumable/manufacturedProduct/manufacturedMaterial/code/@code"
+    vocab_xpath: "consumable/manufacturedProduct/manufacturedMaterial/code/@codeSystem"
     transform: vocab
-    vocab_field: Code.CodeSystem
-  - source: EffectiveTime
-    target: drug_exposure_start_date
+  - target: drug_exposure_start_date
+    xpath: "effectiveTime/@value"
     transform: date
     optional: true
-  - source: EffectiveTime
-    target: drug_exposure_start_datetime
+  - target: drug_exposure_start_datetime
+    xpath: "effectiveTime/@value"
     transform: time_ptr
     optional: true
-  - source: EffectiveTime
-    target: drug_exposure_end_date
+  - target: drug_exposure_end_date
+    xpath: "effectiveTime/@value"
     transform: date
     optional: true
-  - source: EffectiveTime
-    target: drug_exposure_end_datetime
+  - target: drug_exposure_end_datetime
+    xpath: "effectiveTime/@value"
     transform: time_ptr
     optional: true
-  - source: Code
-    target: drug_source_value
-    transform: format_source
-  - source: LotNumber
-    target: lot_number
+  - target: drug_source_value
+    xpath: "consumable/manufacturedProduct/manufacturedMaterial/code/@displayName"
+    fallback_xpath: "consumable/manufacturedProduct/manufacturedMaterial/code/@code"
+    transform: string
+  - target: lot_number
+    xpath: "consumable/manufacturedProduct/manufacturedMaterial/lotNumberText"
     transform: string
     optional: true
-  - source: RouteCode.DisplayName
-    target: route_source_value
+  - target: route_source_value
+    xpath: "routeCode/@displayName"
     transform: string
     optional: true
-  - source: RouteCode.Code
-    target: route_concept_id
+  - target: route_concept_id
+    xpath: "routeCode/@code"
+    vocab_xpath: "routeCode/@codeSystem"
     transform: route
-    vocab_field: RouteCode.CodeSystem
     optional: true
-  - source: DoseQuantity.Value
-    target: quantity
+  - target: quantity
+    xpath: "doseQuantity/@value"
     transform: float
     optional: true
-  - source: DoseQuantity.Unit
-    target: dose_unit_source_value
+  - target: dose_unit_source_value
+    xpath: "doseQuantity/@unit"
     transform: string
     optional: true
 id_gen:

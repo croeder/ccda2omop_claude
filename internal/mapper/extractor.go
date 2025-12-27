@@ -545,3 +545,84 @@ func (e *Extractor) parseHL7Time(s string) time.Time {
 
 	return time.Time{}
 }
+
+// =============================================================================
+// Exported XPath extraction functions for use by the rule engine
+// =============================================================================
+
+// XPathExtractString extracts a string value from a node using xpath
+// Supports fallback xpath if primary returns empty
+func (e *Extractor) XPathExtractString(node *xmlquery.Node, xpath, fallbackXPath string) string {
+	result := e.extractString(node, xpath)
+	if result == "" && fallbackXPath != "" {
+		result = e.extractString(node, fallbackXPath)
+	}
+	return result
+}
+
+// XPathExtractFloat extracts a float value from a node using xpath
+func (e *Extractor) XPathExtractFloat(node *xmlquery.Node, xpath, fallbackXPath string) *float64 {
+	result := e.extractFloat(node, xpath)
+	if result == nil && fallbackXPath != "" {
+		result = e.extractFloat(node, fallbackXPath)
+	}
+	return result
+}
+
+// XPathExtractInt extracts an integer value from a node using xpath
+func (e *Extractor) XPathExtractInt(node *xmlquery.Node, xpath, fallbackXPath string) *int64 {
+	result := e.extractInt(node, xpath)
+	if result == nil && fallbackXPath != "" {
+		result = e.extractInt(node, fallbackXPath)
+	}
+	return result
+}
+
+// XPathExtractTime extracts a time value from a node using xpath
+func (e *Extractor) XPathExtractTime(node *xmlquery.Node, xpath, fallbackXPath string) *time.Time {
+	result := e.extractTime(node, xpath)
+	if result == nil && fallbackXPath != "" {
+		result = e.extractTime(node, fallbackXPath)
+	}
+	return result
+}
+
+// XPathExtractCode extracts a coded value map from a node using xpath
+func (e *Extractor) XPathExtractCode(node *xmlquery.Node, xpath string) map[string]interface{} {
+	return e.extractCode(node, xpath)
+}
+
+// XPathExtractEffectiveTime extracts an effective time structure from a node
+func (e *Extractor) XPathExtractEffectiveTime(node *xmlquery.Node, xpath string) map[string]interface{} {
+	return e.extractEffectiveTime(node, xpath)
+}
+
+// XPathExtractQuantity extracts a quantity (value + unit) from a node
+func (e *Extractor) XPathExtractQuantity(node *xmlquery.Node, xpath string) map[string]interface{} {
+	return e.extractQuantity(node, xpath)
+}
+
+// XPathNode returns the XML node for a given xpath, or nil if not found
+func (e *Extractor) XPathNode(node *xmlquery.Node, xpath string) *xmlquery.Node {
+	return xmlquery.FindOne(node, xpath)
+}
+
+// XPathNodes returns all XML nodes matching a given xpath
+func (e *Extractor) XPathNodes(node *xmlquery.Node, xpath string) []*xmlquery.Node {
+	return xmlquery.Find(node, xpath)
+}
+
+// ParseHL7Time parses an HL7 datetime string (exported for use by rule engine)
+func (e *Extractor) ParseHL7Time(s string) time.Time {
+	return e.parseHL7Time(s)
+}
+
+// GetAttr safely gets an attribute value from a node
+func (e *Extractor) GetAttr(node *xmlquery.Node, name string) string {
+	return e.attr(node, name)
+}
+
+// ShouldIncludeEntry checks if an entry should be included based on moodCode and statusCode
+func (e *Extractor) ShouldIncludeEntry(node *xmlquery.Node) bool {
+	return e.shouldIncludeEntry(node)
+}

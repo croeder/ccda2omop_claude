@@ -63,6 +63,7 @@ func Parse(data []byte) (*Document, error) {
 func parseDocument(root *xmlquery.Node) (*Document, error) {
 	doc := &Document{
 		SectionMeta: make(map[string]SectionMetadata),
+		XMLRoot:     root, // Store for xpath-based extraction
 	}
 
 	// Parse patient demographics

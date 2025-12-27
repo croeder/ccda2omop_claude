@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/antchfx/xmlquery"
 	"github.com/ccda2omop/internal/ccda"
 	"github.com/ccda2omop/internal/omop"
 )
@@ -79,7 +80,7 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 		conditionCount := 0
 		observationCount := 0
 		for _, rule := range problemRules {
-			results, err := m.mapWithRuleAndMeta(rule, doc.Problems, personID, visitMap, doc.SectionMeta)
+			results, err := m.mapWithRuleOrXPath(rule, doc.Problems, doc.XMLRoot, personID, visitMap, doc.SectionMeta)
 			if err != nil {
 				return nil, err
 			}
@@ -101,7 +102,7 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 
 	// Map medications using rules
 	if rule := m.getRuleBySection("Medications"); rule != nil {
-		drugs, err := m.mapWithRuleAndMeta(*rule, doc.Medications, personID, visitMap, doc.SectionMeta)
+		drugs, err := m.mapWithRuleOrXPath(*rule, doc.Medications, doc.XMLRoot, personID, visitMap, doc.SectionMeta)
 		if err != nil {
 			return nil, err
 		}
@@ -115,7 +116,7 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 
 	// Map immunizations using rules
 	if rule := m.getRuleBySection("Immunizations"); rule != nil {
-		imms, err := m.mapWithRuleAndMeta(*rule, doc.Immunizations, personID, visitMap, doc.SectionMeta)
+		imms, err := m.mapWithRuleOrXPath(*rule, doc.Immunizations, doc.XMLRoot, personID, visitMap, doc.SectionMeta)
 		if err != nil {
 			return nil, err
 		}
@@ -134,7 +135,7 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 		measurementCount := 0
 		observationCount := 0
 		for _, rule := range procedureRules {
-			results, err := m.mapWithRuleAndMeta(rule, doc.Procedures, personID, visitMap, doc.SectionMeta)
+			results, err := m.mapWithRuleOrXPath(rule, doc.Procedures, doc.XMLRoot, personID, visitMap, doc.SectionMeta)
 			if err != nil {
 				return nil, err
 			}
@@ -163,7 +164,7 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 		measurementCount := 0
 		observationCount := 0
 		for _, rule := range vitalRules {
-			results, err := m.mapWithRuleAndMeta(rule, doc.VitalSigns, personID, visitMap, doc.SectionMeta)
+			results, err := m.mapWithRuleOrXPath(rule, doc.VitalSigns, doc.XMLRoot, personID, visitMap, doc.SectionMeta)
 			if err != nil {
 				return nil, err
 			}
@@ -189,7 +190,7 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 		measurementCount := 0
 		observationCount := 0
 		for _, rule := range labRules {
-			results, err := m.mapWithRuleAndMeta(rule, doc.LabResults, personID, visitMap, doc.SectionMeta)
+			results, err := m.mapWithRuleOrXPath(rule, doc.LabResults, doc.XMLRoot, personID, visitMap, doc.SectionMeta)
 			if err != nil {
 				return nil, err
 			}
@@ -215,7 +216,7 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 		observationCount := 0
 		conditionCount := 0
 		for _, rule := range allergyRules {
-			results, err := m.mapWithRuleAndMeta(rule, doc.Allergies, personID, visitMap, doc.SectionMeta)
+			results, err := m.mapWithRuleOrXPath(rule, doc.Allergies, doc.XMLRoot, personID, visitMap, doc.SectionMeta)
 			if err != nil {
 				return nil, err
 			}
@@ -242,7 +243,7 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 		measurementCount := 0
 		conditionCount := 0
 		for _, rule := range socialRules {
-			results, err := m.mapWithRuleAndMeta(rule, doc.Observations, personID, visitMap, doc.SectionMeta)
+			results, err := m.mapWithRuleOrXPath(rule, doc.Observations, doc.XMLRoot, personID, visitMap, doc.SectionMeta)
 			if err != nil {
 				return nil, err
 			}
@@ -267,7 +268,7 @@ func (m *RuleBasedMapper) MapDocument(doc *ccda.Document) (*omop.OMOPData, error
 
 	// Map devices using rules
 	if rule := m.getRuleBySection("Devices"); rule != nil {
-		devices, err := m.mapWithRuleAndMeta(*rule, doc.Devices, personID, visitMap, doc.SectionMeta)
+		devices, err := m.mapWithRuleOrXPath(*rule, doc.Devices, doc.XMLRoot, personID, visitMap, doc.SectionMeta)
 		if err != nil {
 			return nil, err
 		}
@@ -308,6 +309,82 @@ func (m *RuleBasedMapper) mapWithRuleAndMeta(rule MappingRule, entries interface
 		entriesRequired = meta.EntriesRequired
 	}
 	return m.engine.MapEntriesWithOptional(rule, entries, personID, visitMap, entriesRequired)
+}
+
+// ruleUsesXPath checks if a rule uses the new xpath format
+func ruleUsesXPath(rule MappingRule) bool {
+	for _, fm := range rule.Fields {
+		if fm.XPath != "" {
+			return true
+		}
+	}
+	return false
+}
+
+// mapWithRuleOrXPath maps entries using xpath when available, otherwise falls back to typed struct mapping
+func (m *RuleBasedMapper) mapWithRuleOrXPath(rule MappingRule, entries interface{}, xmlRoot *xmlquery.Node, personID int64, visitMap map[string]int64, sectionMeta map[string]ccda.SectionMetadata) ([]map[string]interface{}, error) {
+	if ruleUsesXPath(rule) && xmlRoot != nil {
+		return m.mapWithXPath(rule, xmlRoot, personID, visitMap, sectionMeta)
+	}
+	return m.mapWithRuleAndMeta(rule, entries, personID, visitMap, sectionMeta)
+}
+
+// mapWithXPath extracts entries from XML using xpath and maps them using the rule
+func (m *RuleBasedMapper) mapWithXPath(rule MappingRule, xmlRoot *xmlquery.Node, personID int64, visitMap map[string]int64, sectionMeta map[string]ccda.SectionMetadata) ([]map[string]interface{}, error) {
+	if xmlRoot == nil {
+		return nil, nil
+	}
+
+	// Find the section by template OID
+	var section *xmlquery.Node
+	sections := xmlquery.Find(xmlRoot, "//component/section")
+	for _, s := range sections {
+		templates := xmlquery.Find(s, "templateId")
+		for _, t := range templates {
+			root := t.SelectAttr("root")
+			if root == rule.Source.SectionOID || root == rule.Source.SectionOIDEntriesReq {
+				section = s
+				break
+			}
+		}
+		if section != nil {
+			break
+		}
+	}
+
+	if section == nil {
+		return nil, nil // Section not found
+	}
+
+	// Check if entries are required
+	entriesRequired := true
+	if meta, ok := sectionMeta[rule.Source.Section]; ok {
+		entriesRequired = meta.EntriesRequired
+	}
+
+	// Extract entries using the rule's entry xpath
+	entries := xmlquery.Find(section, rule.Source.EntryXPath)
+	if len(entries) == 0 {
+		return nil, nil
+	}
+
+	// Map each entry using xpath extraction
+	var results []map[string]interface{}
+	for _, entry := range entries {
+		// Check moodCode and statusCode
+		if !m.engine.extractor.ShouldIncludeEntry(entry) {
+			continue
+		}
+
+		// Pass the XML node to the rule engine
+		mapped, err := m.engine.MapEntryWithOptional(rule, entry, personID, visitMap, entriesRequired)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, mapped...)
+	}
+
+	return results, nil
 }
 
 // Conversion functions from map to OMOP structs

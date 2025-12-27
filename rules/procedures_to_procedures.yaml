@@ -5,19 +5,6 @@ source:
   section_oid_entries_required: "2.16.840.1.113883.10.20.22.2.7.1"
   entry_xpath: "entry/procedure"
   entry_type: Procedure
-  extraction:
-    - field: Code
-      xpath: "code"
-      type: code
-    - field: EffectiveTime
-      xpath: "effectiveTime"
-      type: effective_time
-    - field: Status
-      xpath: "statusCode"
-      type: code
-    - field: TargetSite
-      xpath: "targetSiteCode"
-      type: code
   conditions:
     - type: domain_equals
       value: Procedure
@@ -25,23 +12,26 @@ target:
   table: procedure_occurrence
   type_concept_id: 32817
 fields:
-  - source: Code.Code
-    target: procedure_concept_id
+  - target: procedure_concept_id
+    xpath: "code/@code"
+    vocab_xpath: "code/@codeSystem"
     transform: vocab
-    vocab_field: Code.CodeSystem
-  - source: EffectiveTime.Low|EffectiveTime.Value
-    target: procedure_date
+  - target: procedure_date
+    xpath: "effectiveTime/low/@value"
+    fallback_xpath: "effectiveTime/@value"
     transform: date
     optional: true
-  - source: EffectiveTime.Low|EffectiveTime.Value
-    target: procedure_datetime
+  - target: procedure_datetime
+    xpath: "effectiveTime/low/@value"
+    fallback_xpath: "effectiveTime/@value"
     transform: time_ptr
     optional: true
-  - source: Code
-    target: procedure_source_value
-    transform: format_source
-  - source: TargetSite.DisplayName
-    target: modifier_source_value
+  - target: procedure_source_value
+    xpath: "code/@displayName"
+    fallback_xpath: "code/@code"
+    transform: string
+  - target: modifier_source_value
+    xpath: "targetSiteCode/@displayName"
     transform: string
     optional: true
 id_gen:

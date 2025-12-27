@@ -5,28 +5,6 @@ source:
   section_oid_entries_required: "2.16.840.1.113883.10.20.22.2.3.1"
   entry_xpath: "entry/organizer/component/observation"
   entry_type: LabResult
-  extraction:
-    - field: Code
-      xpath: "code"
-      type: code
-    - field: EffectiveTime
-      xpath: "effectiveTime"
-      type: time
-    - field: Value
-      xpath: "value/@value"
-      type: float
-    - field: ValueString
-      xpath: "value/@value"
-      type: string
-    - field: Unit
-      xpath: "value/@unit"
-      type: string
-    - field: Interpretation
-      xpath: "interpretationCode"
-      type: code
-    - field: ReferenceRange
-      xpath: "referenceRange/observationRange/value"
-      type: quantity
   conditions:
     - type: domain_equals
       value: Measurement
@@ -34,49 +12,50 @@ target:
   table: measurement
   type_concept_id: 32817
 fields:
-  - source: Code.Code
-    target: measurement_concept_id
+  - target: measurement_concept_id
+    xpath: "code/@code"
+    vocab_xpath: "code/@codeSystem"
     transform: vocab
-    vocab_field: Code.CodeSystem
-  - source: EffectiveTime
-    target: measurement_date
+  - target: measurement_date
+    xpath: "effectiveTime/@value"
     transform: date
     optional: true
-  - source: EffectiveTime
-    target: measurement_datetime
+  - target: measurement_datetime
+    xpath: "effectiveTime/@value"
     transform: time_ptr
     optional: true
-  - source: Code
-    target: measurement_source_value
-    transform: format_source
-  - source: Value
-    target: value_as_number
+  - target: measurement_source_value
+    xpath: "code/@displayName"
+    fallback_xpath: "code/@code"
+    transform: string
+  - target: value_as_number
+    xpath: "value/@value"
     transform: float
     optional: true
-  - source: Value|ValueString
-    target: value_source_value
+  - target: value_source_value
+    xpath: "value/@value"
     transform: string
     optional: true
-  - source: Unit
-    target: unit_source_value
+  - target: unit_source_value
+    xpath: "value/@unit"
     transform: string
     optional: true
-  - source: Unit
-    target: unit_concept_id
+  - target: unit_concept_id
+    xpath: "value/@unit"
     transform: unit
     optional: true
-  - source: ReferenceRange.Low
-    target: range_low
+  - target: range_low
+    xpath: "referenceRange/observationRange/value/low/@value"
     transform: float
     optional: true
-  - source: ReferenceRange.High
-    target: range_high
+  - target: range_high
+    xpath: "referenceRange/observationRange/value/high/@value"
     transform: float
     optional: true
-  - source: Interpretation.Code
-    target: value_as_concept_id
+  - target: value_as_concept_id
+    xpath: "interpretationCode/@code"
+    vocab_xpath: "interpretationCode/@codeSystem"
     transform: value_vocab
-    vocab_field: Interpretation.CodeSystem
     optional: true
 id_gen:
   base_fields:

@@ -5,25 +5,6 @@ source:
   section_oid_entries_required: "2.16.840.1.113883.10.20.22.2.6.1"
   entry_xpath: "entry/act/entryRelationship/observation"
   entry_type: Allergy
-  extraction:
-    - field: Substance
-      xpath: "participant[@typeCode='CSM']/participantRole/playingEntity/code"
-      type: code
-    - field: Code
-      xpath: "code"
-      type: code
-    - field: EffectiveTime
-      xpath: "effectiveTime"
-      type: effective_time
-    - field: Status
-      xpath: "statusCode"
-      type: code
-    - field: Reaction
-      xpath: "entryRelationship/observation[code/@code='ASSERTION']/value"
-      type: code
-    - field: Severity
-      xpath: "entryRelationship/observation[code/@code='SEV']/value"
-      type: code
   conditions:
     - type: domain_equals
       value: Observation
@@ -31,34 +12,38 @@ target:
   table: observation
   type_concept_id: 32817
 fields:
-  - source: Substance.Code|Code.Code
-    target: observation_concept_id
+  - target: observation_concept_id
+    xpath: "participant[@typeCode='CSM']/participantRole/playingEntity/code/@code"
+    fallback_xpath: "code/@code"
+    vocab_xpath: "participant[@typeCode='CSM']/participantRole/playingEntity/code/@codeSystem"
     transform: vocab
-    vocab_field: Substance.CodeSystem|Code.CodeSystem
     optional: true
-  - source: EffectiveTime.Low|EffectiveTime.Value
-    target: observation_date
+  - target: observation_date
+    xpath: "effectiveTime/low/@value"
+    fallback_xpath: "effectiveTime/@value"
     transform: date
     optional: true
-  - source: EffectiveTime.Low|EffectiveTime.Value
-    target: observation_datetime
+  - target: observation_datetime
+    xpath: "effectiveTime/low/@value"
+    fallback_xpath: "effectiveTime/@value"
     transform: time_ptr
     optional: true
-  - source: Substance|Code
-    target: observation_source_value
-    transform: format_source
-    optional: true
-  - source: Reaction.DisplayName
-    target: value_as_string
+  - target: observation_source_value
+    xpath: "participant[@typeCode='CSM']/participantRole/playingEntity/code/@displayName"
+    fallback_xpath: "code/@displayName"
     transform: string
     optional: true
-  - source: Reaction.Code
-    target: value_as_concept_id
-    transform: value_vocab
-    vocab_field: Reaction.CodeSystem
+  - target: value_as_string
+    xpath: "entryRelationship/observation[code/@code='ASSERTION']/value/@displayName"
+    transform: string
     optional: true
-  - source: Severity.DisplayName
-    target: qualifier_source_value
+  - target: value_as_concept_id
+    xpath: "entryRelationship/observation[code/@code='ASSERTION']/value/@code"
+    vocab_xpath: "entryRelationship/observation[code/@code='ASSERTION']/value/@codeSystem"
+    transform: value_vocab
+    optional: true
+  - target: qualifier_source_value
+    xpath: "entryRelationship/observation[code/@code='SEV']/value/@displayName"
     transform: string
     optional: true
 id_gen:

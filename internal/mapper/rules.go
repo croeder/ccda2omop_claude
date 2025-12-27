@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/antchfx/xmlquery"
 	"github.com/ccda2omop/internal/ccda"
 	"github.com/ccda2omop/internal/omop"
 )
@@ -55,11 +56,15 @@ type TargetSpec struct {
 
 // FieldMapping defines how to map a source field to a target field
 type FieldMapping struct {
+	Target        string // Target column/field name
+	XPath         string // Primary xpath expression (new flat format)
+	FallbackXPath string // Fallback xpath if primary returns nil
+	VocabXPath    string // XPath for code system (vocab lookups)
+	Transform     string // Transform type: none, date, float, vocab, unit, format_source
+	Optional      bool   // If true, missing source value is OK
+	// Deprecated: Use XPath instead
 	Source     string // Source field path (dot notation, | for fallback)
-	Target     string // Target column/field name
-	Transform  string // Transform type: none, date, float, vocab, unit, format_source
 	VocabField string // For vocab lookups, field containing code system OID
-	Optional   bool   // If true, missing source value is OK
 }
 
 // IDGenSpec defines how to generate unique IDs
@@ -70,10 +75,12 @@ type IDGenSpec struct {
 
 // MappingContext provides context for transforms
 type MappingContext struct {
-	PersonID int64
-	Vocab    *VocabularyMapper
-	VisitMap map[string]int64
-	Source   interface{} // The source struct being mapped
+	PersonID  int64
+	Vocab     *VocabularyMapper
+	VisitMap  map[string]int64
+	Source    interface{}         // The source struct being mapped (legacy)
+	Node      *xmlquery.Node      // XML node for xpath extraction (new)
+	Extractor *Extractor          // Extractor for xpath operations
 }
 
 // TransformFunc is a function that transforms a value
@@ -82,6 +89,7 @@ type TransformFunc func(value interface{}, fieldMapping FieldMapping, ctx *Mappi
 // RuleEngine executes mapping rules
 type RuleEngine struct {
 	vocab      *VocabularyMapper
+	extractor  *Extractor
 	transforms map[string]TransformFunc
 	verbose    bool
 }
@@ -90,6 +98,7 @@ type RuleEngine struct {
 func NewRuleEngine(vocab *VocabularyMapper, verbose bool) *RuleEngine {
 	re := &RuleEngine{
 		vocab:      vocab,
+		extractor:  NewExtractor(verbose),
 		transforms: make(map[string]TransformFunc),
 		verbose:    verbose,
 	}
@@ -146,10 +155,17 @@ func (re *RuleEngine) MapEntry(rule MappingRule, source interface{}, personID in
 // If entriesRequired is false, all fields are treated as optional
 func (re *RuleEngine) MapEntryWithOptional(rule MappingRule, source interface{}, personID int64, visitMap map[string]int64, entriesRequired bool) ([]map[string]interface{}, error) {
 	ctx := &MappingContext{
-		PersonID: personID,
-		Vocab:    re.vocab,
-		VisitMap: visitMap,
-		Source:   source,
+		PersonID:  personID,
+		Vocab:     re.vocab,
+		VisitMap:  visitMap,
+		Extractor: re.extractor,
+	}
+
+	// Check if source is an XML node (new xpath format) or a struct (legacy format)
+	if node, ok := source.(*xmlquery.Node); ok {
+		ctx.Node = node
+	} else {
+		ctx.Source = source
 	}
 
 	// First, find the concept ID field to determine multi-mapping
@@ -159,7 +175,7 @@ func (re *RuleEngine) MapEntryWithOptional(rule MappingRule, source interface{},
 		if fm.Transform == "vocab" {
 			// When entries are not required, treat all fields as optional
 			isOptional := fm.Optional || !entriesRequired
-			value, err := re.extractValue(source, fm.Source)
+			value, err := re.extractFieldValue(fm, ctx)
 			if err != nil {
 				if isOptional {
 					// Optional field missing, use concept 0
@@ -170,8 +186,7 @@ func (re *RuleEngine) MapEntryWithOptional(rule MappingRule, source interface{},
 				return nil, nil
 			}
 
-			codeSystemValue, _ := re.extractValue(source, fm.VocabField)
-			codeSystem, _ := codeSystemValue.(string)
+			codeSystem := re.extractVocabXPath(fm, ctx)
 
 			if code, ok := value.(string); ok && code != "" {
 				conceptIDs = re.vocab.MapConditionCodes(code, codeSystem)
@@ -234,12 +249,16 @@ func (re *RuleEngine) MapEntryWithOptional(rule MappingRule, source interface{},
 			// When entries are not required, treat all fields as optional
 			isOptional := fm.Optional || !entriesRequired
 
-			value, err := re.extractValue(source, fm.Source)
+			value, err := re.extractFieldValue(fm, ctx)
 			if err != nil {
 				if isOptional {
 					continue
 				}
-				return nil, fmt.Errorf("error extracting %s: %w", fm.Source, err)
+				fieldRef := fm.XPath
+				if fieldRef == "" {
+					fieldRef = fm.Source
+				}
+				return nil, fmt.Errorf("error extracting %s: %w", fieldRef, err)
 			}
 
 			// Apply transform
@@ -253,7 +272,11 @@ func (re *RuleEngine) MapEntryWithOptional(rule MappingRule, source interface{},
 				if isOptional {
 					continue
 				}
-				return nil, fmt.Errorf("error transforming %s: %w", fm.Source, err)
+				fieldRef := fm.XPath
+				if fieldRef == "" {
+					fieldRef = fm.Source
+				}
+				return nil, fmt.Errorf("error transforming %s: %w", fieldRef, err)
 			}
 
 			if transformed != nil {
@@ -368,6 +391,103 @@ func isZeroValue(v interface{}) bool {
 	}
 	val := reflect.ValueOf(v)
 	return val.IsZero()
+}
+
+// extractFieldValue extracts a value using xpath (new format) or legacy Source path
+// Returns the extracted value and an error if extraction fails
+func (re *RuleEngine) extractFieldValue(fm FieldMapping, ctx *MappingContext) (interface{}, error) {
+	// New xpath format takes precedence
+	if fm.XPath != "" && ctx.Node != nil && ctx.Extractor != nil {
+		return re.extractXPathValue(fm, ctx)
+	}
+
+	// Fall back to legacy Source format
+	if fm.Source != "" {
+		return re.extractValue(ctx.Source, fm.Source)
+	}
+
+	return nil, fmt.Errorf("no xpath or source defined for field %s", fm.Target)
+}
+
+// extractXPathValue extracts a value from an XML node using xpath
+func (re *RuleEngine) extractXPathValue(fm FieldMapping, ctx *MappingContext) (interface{}, error) {
+	ext := ctx.Extractor
+	node := ctx.Node
+
+	switch fm.Transform {
+	case "vocab":
+		// Extract code value for vocabulary mapping
+		code := ext.XPathExtractString(node, fm.XPath, fm.FallbackXPath)
+		if code == "" {
+			return nil, fmt.Errorf("no code value found at xpath: %s", fm.XPath)
+		}
+		return code, nil
+
+	case "date":
+		t := ext.XPathExtractTime(node, fm.XPath, fm.FallbackXPath)
+		if t == nil {
+			return nil, fmt.Errorf("no date value found at xpath: %s", fm.XPath)
+		}
+		return *t, nil
+
+	case "time_ptr":
+		t := ext.XPathExtractTime(node, fm.XPath, fm.FallbackXPath)
+		return t, nil // Can be nil
+
+	case "float":
+		f := ext.XPathExtractFloat(node, fm.XPath, fm.FallbackXPath)
+		if f == nil {
+			return nil, fmt.Errorf("no float value found at xpath: %s", fm.XPath)
+		}
+		return *f, nil
+
+	case "int":
+		i := ext.XPathExtractInt(node, fm.XPath, fm.FallbackXPath)
+		if i == nil {
+			return nil, fmt.Errorf("no int value found at xpath: %s", fm.XPath)
+		}
+		return *i, nil
+
+	case "string", "format_source":
+		s := ext.XPathExtractString(node, fm.XPath, fm.FallbackXPath)
+		if s == "" {
+			return nil, fmt.Errorf("no string value found at xpath: %s", fm.XPath)
+		}
+		return s, nil
+
+	case "unit":
+		s := ext.XPathExtractString(node, fm.XPath, fm.FallbackXPath)
+		return s, nil // Can be empty
+
+	case "route":
+		s := ext.XPathExtractString(node, fm.XPath, fm.FallbackXPath)
+		return s, nil // Can be empty
+
+	case "value_vocab":
+		s := ext.XPathExtractString(node, fm.XPath, fm.FallbackXPath)
+		return s, nil // Can be empty
+
+	default:
+		// Default to string extraction
+		s := ext.XPathExtractString(node, fm.XPath, fm.FallbackXPath)
+		return s, nil
+	}
+}
+
+// extractVocabXPath extracts the code system value using VocabXPath
+func (re *RuleEngine) extractVocabXPath(fm FieldMapping, ctx *MappingContext) string {
+	if fm.VocabXPath != "" && ctx.Node != nil && ctx.Extractor != nil {
+		return ctx.Extractor.XPathExtractString(ctx.Node, fm.VocabXPath, "")
+	}
+	// Fall back to legacy VocabField
+	if fm.VocabField != "" && ctx.Source != nil {
+		if val, err := re.extractValue(ctx.Source, fm.VocabField); err == nil {
+			if s, ok := val.(string); ok {
+				return s
+			}
+		}
+	}
+	return ""
 }
 
 // generateID generates a unique ID for a record
@@ -544,13 +664,7 @@ func (re *RuleEngine) transformVocab(value interface{}, fm FieldMapping, ctx *Ma
 		return int64(0), nil
 	}
 
-	codeSystem := ""
-	if fm.VocabField != "" {
-		// VocabField can use | for fallbacks just like Source
-		if cs, err := re.extractValue(ctx.Source, fm.VocabField); err == nil {
-			codeSystem, _ = cs.(string)
-		}
-	}
+	codeSystem := re.extractVocabXPath(fm, ctx)
 
 	// Return first concept ID (multi-mapping handled at higher level)
 	return re.vocab.MapConditionCode(code, codeSystem), nil
@@ -570,12 +684,7 @@ func (re *RuleEngine) transformRoute(value interface{}, fm FieldMapping, ctx *Ma
 		return nil, nil
 	}
 
-	codeSystem := ""
-	if fm.VocabField != "" {
-		if cs, err := re.extractValue(ctx.Source, fm.VocabField); err == nil {
-			codeSystem, _ = cs.(string)
-		}
-	}
+	codeSystem := re.extractVocabXPath(fm, ctx)
 
 	return re.vocab.MapRouteCode(code, codeSystem), nil
 }
@@ -588,12 +697,7 @@ func (re *RuleEngine) transformValueVocab(value interface{}, fm FieldMapping, ct
 		return nil, nil
 	}
 
-	codeSystem := ""
-	if fm.VocabField != "" {
-		if cs, err := re.extractValue(ctx.Source, fm.VocabField); err == nil {
-			codeSystem, _ = cs.(string)
-		}
-	}
+	codeSystem := re.extractVocabXPath(fm, ctx)
 
 	// Use the appropriate mapper based on target field
 	conceptID := re.vocab.MapObservationValueCode(code, codeSystem)
