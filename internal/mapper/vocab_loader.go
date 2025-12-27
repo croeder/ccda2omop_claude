@@ -57,6 +57,7 @@ func NewVocabLoader() *VocabLoader {
 			"UNII":      true, // FDA Unique Ingredient Identifier (allergens)
 			"NDFRT":     true, // National Drug File Reference Terminology
 			"NCI":       true, // NCI Thesaurus (route of administration codes)
+			"ActCode":   true, // HL7 ActCode (ASSERTION codes)
 			"Gender":    true,
 			"Race":      true,
 			"Ethnicity": true,
@@ -369,6 +370,8 @@ func OIDToVocabularyID(oid string) string {
 		return "NDFRT" // National Drug File Reference Terminology
 	case "2.16.840.1.113883.3.26.1.1":
 		return "NCI" // NCI Thesaurus (route of administration codes)
+	case "2.16.840.1.113883.5.4":
+		return "ActCode" // HL7 ActCode (ASSERTION codes)
 	// Direct vocabulary names (some C-CDA files use these instead of OIDs)
 	case "SNOMED", "SNOMED CT", "SNOMEDCT":
 		return "SNOMED"
@@ -394,6 +397,8 @@ func OIDToVocabularyID(oid string) string {
 		return "NDFRT"
 	case "NCI", "NCIt":
 		return "NCI"
+	case "ActCode", "ASSERTION":
+		return "ActCode"
 	default:
 		return ""
 	}
