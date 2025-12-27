@@ -12,6 +12,7 @@ import (
 	"github.com/ccda2omop/internal/ccda"
 	"github.com/ccda2omop/internal/mapper"
 	"github.com/ccda2omop/internal/omop"
+	"github.com/ccda2omop/internal/report"
 )
 
 type Config struct {
@@ -22,6 +23,7 @@ type Config struct {
 	RelationshipFile string // Path to CONCEPT_RELATIONSHIP.csv
 	VocabDir         string // Path to directory with supplementary vocabulary files (e.g., CVX.csv)
 	RulesFile        string // Path to YAML rules file (optional, uses Go-defined rules if empty)
+	GenerateReport   bool   // Generate conversion report
 }
 
 // ConversionSummary holds counts of records created during conversion
@@ -34,6 +36,7 @@ type ConversionSummary struct {
 	Measurements         int
 	Observations         int
 	DeviceExposures      int
+	Report               *report.ConversionReport
 }
 
 // Shared vocab loader for batch processing
@@ -118,6 +121,12 @@ func RunBatch(files []string, cfg Config) (*ConversionSummary, error) {
 	// Aggregate all OMOP data
 	aggregatedData := &omop.OMOPData{}
 
+	// Initialize report if requested
+	var convReport *report.ConversionReport
+	if cfg.GenerateReport {
+		convReport = report.NewConversionReport()
+	}
+
 	for i, inputFile := range files {
 		if cfg.Verbose {
 			log.Printf("Processing file %d/%d: %s", i+1, len(files), inputFile)
@@ -125,7 +134,14 @@ func RunBatch(files []string, cfg Config) (*ConversionSummary, error) {
 
 		omopData, err := processFile(inputFile, cfg)
 		if err != nil {
+			if convReport != nil {
+				convReport.AddDocument(true)
+			}
 			return nil, fmt.Errorf("failed to process %s: %w", inputFile, err)
+		}
+
+		if convReport != nil {
+			convReport.AddDocument(false)
 		}
 
 		// Set source file on all records (use base filename for readability)
@@ -149,6 +165,11 @@ func RunBatch(files []string, cfg Config) (*ConversionSummary, error) {
 		return nil, fmt.Errorf("failed to write OMOP CSV files: %w", err)
 	}
 
+	// Calculate report from aggregated data if requested
+	if convReport != nil {
+		convReport.CalculateFromOMOPData(aggregatedData)
+	}
+
 	// Build summary
 	summary := &ConversionSummary{
 		Persons:              len(aggregatedData.Persons),
@@ -159,6 +180,7 @@ func RunBatch(files []string, cfg Config) (*ConversionSummary, error) {
 		Measurements:         len(aggregatedData.Measurements),
 		Observations:         len(aggregatedData.Observations),
 		DeviceExposures:      len(aggregatedData.DeviceExposures),
+		Report:               convReport,
 	}
 
 	if cfg.Verbose {

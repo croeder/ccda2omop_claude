@@ -14,6 +14,7 @@ import (
 	"github.com/ccda2omop/internal/analyzer"
 	"github.com/ccda2omop/internal/converter"
 	"github.com/ccda2omop/internal/mapper"
+	"github.com/ccda2omop/internal/report"
 )
 
 func main() {
@@ -27,11 +28,14 @@ func main() {
 	analyzeOutput := flag.String("analyze-output", "", "Output CSV file for analysis (default: stdout)")
 	summary := flag.Bool("summary", false, "Show summary of C-CDA sections to OMOP table mappings (use with -analyze)")
 	vocabDir := flag.String("vocab-dir", "", "Path to directory containing supplementary vocabulary CSV files (e.g., CVX.csv, CPT4.csv)")
+	reportFlag := flag.Bool("report", false, "Generate conversion coverage report")
+	reportOutput := flag.String("report-output", "", "Output file for report (default: stdout). Use .json extension for JSON format")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "ccda2omop - Convert C-CDA XML documents to OMOP CDM 5.3 CSV files\n\n")
 		fmt.Fprintf(os.Stderr, "Usage:\n")
 		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml|dir> [-output <dir>] [-concept <vocab.csv>] [-relationship <rel.csv>] [-rules-file <rules.yaml>] [-verbose]\n")
+		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml|dir> -report [-report-output <file.md|file.json>]\n")
 		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml|dir> -analyze -concept <vocab.csv> [-relationship <rel.csv>] [-analyze-output <file.csv>]\n")
 		fmt.Fprintf(os.Stderr, "  ccda2omop -input <file.xml|dir> -analyze -summary -concept <vocab.csv> [-relationship <rel.csv>]\n\n")
 		fmt.Fprintf(os.Stderr, "The -input flag accepts either a single XML file or a directory containing XML files.\n")
@@ -88,6 +92,7 @@ func main() {
 		RelationshipFile: *relationshipFile,
 		VocabDir:         *vocabDir,
 		RulesFile:        *rulesFile,
+		GenerateReport:   *reportFlag,
 	}
 
 	stats, err := converter.RunBatch(xmlFiles, cfg)
@@ -100,6 +105,13 @@ func main() {
 		stats.Persons, stats.VisitOccurrences, stats.ConditionOccurrences,
 		stats.DrugExposures, stats.ProcedureOccurrences, stats.Measurements,
 		stats.Observations, stats.DeviceExposures)
+
+	// Output report if requested
+	if *reportFlag && stats.Report != nil {
+		if err := writeReport(stats.Report, *reportOutput); err != nil {
+			log.Fatalf("Failed to write report: %v", err)
+		}
+	}
 }
 
 // loadSupplementaryVocabs loads all CSV files from a directory as supplementary vocabularies
@@ -223,6 +235,39 @@ func runAnalyze(inputFiles []string, conceptFile, relationshipFile, vocabDir, ou
 	if outputFile != "" {
 		a.PrintSummary(allMappings, os.Stderr)
 		fmt.Fprintf(os.Stderr, "\nAnalysis written to: %s\n", outputFile)
+	}
+
+	return nil
+}
+
+// writeReport writes the conversion report to the specified output
+func writeReport(r *report.ConversionReport, outputFile string) error {
+	var output *os.File
+	var err error
+
+	if outputFile != "" {
+		output, err = os.Create(outputFile)
+		if err != nil {
+			return fmt.Errorf("failed to create report file: %w", err)
+		}
+		defer output.Close()
+	} else {
+		output = os.Stdout
+	}
+
+	// Use JSON format if file ends with .json
+	if strings.HasSuffix(strings.ToLower(outputFile), ".json") {
+		if err := r.WriteJSON(output); err != nil {
+			return fmt.Errorf("failed to write JSON report: %w", err)
+		}
+	} else {
+		if err := r.WriteText(output); err != nil {
+			return fmt.Errorf("failed to write text report: %w", err)
+		}
+	}
+
+	if outputFile != "" {
+		fmt.Fprintf(os.Stderr, "Report written to: %s\n", outputFile)
 	}
 
 	return nil
