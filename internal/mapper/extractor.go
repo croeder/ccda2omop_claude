@@ -207,14 +207,15 @@ func (e *Extractor) extractCode(node *xmlquery.Node, xpath string) map[string]in
 
 // extractTime extracts a time value from an attribute or element
 func (e *Extractor) extractTime(node *xmlquery.Node, xpath string) *time.Time {
-	// Handle attribute XPath (e.g., "effectiveTime/@value")
-	if strings.Contains(xpath, "/@") {
-		parts := strings.Split(xpath, "/@")
-		target := xmlquery.FindOne(node, parts[0])
+	// Handle attribute XPath - split on LAST /@ to handle predicates with /@ inside
+	if lastIdx := strings.LastIndex(xpath, "/@"); lastIdx != -1 {
+		pathPart := xpath[:lastIdx]
+		attrPart := xpath[lastIdx+2:]
+		target := xmlquery.FindOne(node, pathPart)
 		if target == nil {
 			return nil
 		}
-		value := e.attr(target, parts[1])
+		value := e.attr(target, attrPart)
 		t := e.parseHL7Time(value)
 		if t.IsZero() {
 			return nil
@@ -271,14 +272,15 @@ func (e *Extractor) extractEffectiveTime(node *xmlquery.Node, xpath string) map[
 
 // extractFloat extracts a float value
 func (e *Extractor) extractFloat(node *xmlquery.Node, xpath string) *float64 {
-	// Handle attribute XPath
-	if strings.Contains(xpath, "/@") {
-		parts := strings.Split(xpath, "/@")
-		target := xmlquery.FindOne(node, parts[0])
+	// Handle attribute XPath - split on LAST /@ to handle predicates with /@ inside
+	if lastIdx := strings.LastIndex(xpath, "/@"); lastIdx != -1 {
+		pathPart := xpath[:lastIdx]
+		attrPart := xpath[lastIdx+2:]
+		target := xmlquery.FindOne(node, pathPart)
 		if target == nil {
 			return nil
 		}
-		value := e.attr(target, parts[1])
+		value := e.attr(target, attrPart)
 		if value == "" {
 			return nil
 		}
@@ -310,14 +312,15 @@ func (e *Extractor) extractFloat(node *xmlquery.Node, xpath string) *float64 {
 
 // extractInt extracts an integer value
 func (e *Extractor) extractInt(node *xmlquery.Node, xpath string) *int64 {
-	// Handle attribute XPath
-	if strings.Contains(xpath, "/@") {
-		parts := strings.Split(xpath, "/@")
-		target := xmlquery.FindOne(node, parts[0])
+	// Handle attribute XPath - split on LAST /@ to handle predicates with /@ inside
+	if lastIdx := strings.LastIndex(xpath, "/@"); lastIdx != -1 {
+		pathPart := xpath[:lastIdx]
+		attrPart := xpath[lastIdx+2:]
+		target := xmlquery.FindOne(node, pathPart)
 		if target == nil {
 			return nil
 		}
-		value := e.attr(target, parts[1])
+		value := e.attr(target, attrPart)
 		if value == "" {
 			return nil
 		}
@@ -348,14 +351,15 @@ func (e *Extractor) extractInt(node *xmlquery.Node, xpath string) *int64 {
 
 // extractString extracts a string value
 func (e *Extractor) extractString(node *xmlquery.Node, xpath string) string {
-	// Handle attribute XPath
-	if strings.Contains(xpath, "/@") {
-		parts := strings.Split(xpath, "/@")
-		target := xmlquery.FindOne(node, parts[0])
+	// Handle attribute XPath - split on LAST /@ to handle predicates with /@ inside
+	if lastIdx := strings.LastIndex(xpath, "/@"); lastIdx != -1 {
+		pathPart := xpath[:lastIdx]
+		attrPart := xpath[lastIdx+2:] // skip "/@"
+		target := xmlquery.FindOne(node, pathPart)
 		if target == nil {
 			return ""
 		}
-		return e.attr(target, parts[1])
+		return e.attr(target, attrPart)
 	}
 
 	target := xmlquery.FindOne(node, xpath)
