@@ -354,6 +354,8 @@ func OIDToVocabularyID(oid string) string {
 		return "CPT4"
 	case "2.16.840.1.113883.6.14":
 		return "HCPCS"
+	case "2.16.840.1.113883.6.13": // CDT OID sometimes incorrectly used for HCPCS in C-CDA
+		return "HCPCS"
 	case "2.16.840.1.113883.12.292":
 		return "CVX"
 	case "2.16.840.1.113883.6.59": // Alternate CVX OID
