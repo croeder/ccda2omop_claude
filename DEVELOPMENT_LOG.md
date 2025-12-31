@@ -118,3 +118,59 @@ OMOP CDM Tables populated:
 - Procedures: 90.1%
 - SocialHistory: 4.0%
 - VitalSigns: 99.7%
+
+---
+
+## Session: December 30, 2025
+
+### 8. Python Translation Project
+**Prompt**: Translate ccda2omop from Go to Python.
+
+**Changes Made**:
+- Created sibling project `ccda2omop-py/` with full Python implementation
+- Structure: `src/ccda2omop/` with submodules for ccda, omop, mapper, converter, analyzer, report
+- Dependencies: lxml for XML/XPath, PyYAML, click for CLI
+- Feature parity with Go version including YAML rule support
+- Repository: Separate git repository at `../ccda2omop-py/`
+
+---
+
+### 9. Domain-Based Routing Fix (Python)
+**Prompt**: Fix Python rule engine to match Go YAML rules behavior for domain-based routing.
+
+**Changes Made**:
+- Fixed `rule_engine.py` to strictly enforce domain conditions
+- Entries now routed to correct OMOP tables based on concept domain:
+  - Procedures with domain "Observation" → observation table
+  - Procedures with domain "Measurement" → measurement table
+  - Procedures with domain "Procedure" → procedure_occurrence table
+- Commit: 006a698 (in ccda2omop-py repo)
+
+---
+
+### 10. Domain Conditions for Go Hardcoded Rules
+**Prompt**: Fix Go hardcoded rules to add domain conditions matching YAML rules behavior.
+
+**Changes Made**:
+- Added `Conditions` to `SourceSpec` for all existing rules in `rule_definitions.go`:
+  - ProblemRule: `domain_equals: Condition`
+  - ProcedureRule: `domain_equals: Procedure`
+  - VitalSignRule: `domain_equals: Measurement`
+  - LabResultRule: `domain_equals: Measurement`
+  - AllergyRule: `domain_equals: Observation`
+  - SocialObservationRule: `domain_equals: Observation`
+- Added 9 new rules for domain-based routing:
+  - ProblemToObservationRule (domain: Observation)
+  - ProcedureToObservationRule (domain: Observation)
+  - ProcedureToMeasurementRule (domain: Measurement)
+  - VitalSignToObservationRule (domain: Observation)
+  - LabResultToObservationRule (domain: Observation)
+  - AllergyToConditionRule (domain: Condition)
+  - SocialToConditionRule (domain: Condition)
+  - SocialToMeasurementRule (domain: Measurement)
+- Updated `AllRules` slice to include all 17 rules
+- Commit: abfe15e
+
+**Verification**:
+Both Go (hardcoded rules) and Python produce identical output for Patient-620.xml:
+- 1 person, 4 visit, 5 condition, 6 drug, 4 procedure, 18 measurement, 1 observation, 0 device
