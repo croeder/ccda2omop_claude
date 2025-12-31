@@ -12,6 +12,9 @@ var (
 		Source: SourceSpec{
 			Section:   "Problems",
 			EntryType: "Problem",
+			Conditions: []Condition{
+				{Type: "domain_equals", Value: "Condition"},
+			},
 		},
 		Target: TargetSpec{
 			Table:         "condition_occurrence",
@@ -28,6 +31,32 @@ var (
 		IDGen: IDGenSpec{
 			BaseFields: []string{"Code.Code", "EffectiveTime.Low"},
 			Generator:  "condition",
+		},
+	}
+
+	// ProblemToObservationRule maps Problems with Observation domain to observation
+	ProblemToObservationRule = MappingRule{
+		Name: "problems_to_observations",
+		Source: SourceSpec{
+			Section:   "Problems",
+			EntryType: "Problem",
+			Conditions: []Condition{
+				{Type: "domain_equals", Value: "Observation"},
+			},
+		},
+		Target: TargetSpec{
+			Table:         "observation",
+			TypeConceptID: ConceptEHRObservation,
+		},
+		Fields: []FieldMapping{
+			{Source: "Code.Code", Target: "observation_concept_id", Transform: "vocab", VocabField: "Code.CodeSystem"},
+			{Source: "EffectiveTime.Low|EffectiveTime.Value", Target: "observation_date", Transform: "date", Optional: true},
+			{Source: "EffectiveTime.Low|EffectiveTime.Value", Target: "observation_datetime", Transform: "time_ptr", Optional: true},
+			{Source: "Code", Target: "observation_source_value", Transform: "format_source"},
+		},
+		IDGen: IDGenSpec{
+			BaseFields: []string{"Code.Code", "EffectiveTime.Low"},
+			Generator:  "observation",
 		},
 	}
 
@@ -99,6 +128,9 @@ var (
 		Source: SourceSpec{
 			Section:   "Procedures",
 			EntryType: "Procedure",
+			Conditions: []Condition{
+				{Type: "domain_equals", Value: "Procedure"},
+			},
 		},
 		Target: TargetSpec{
 			Table:         "procedure_occurrence",
@@ -117,12 +149,67 @@ var (
 		},
 	}
 
+	// ProcedureToObservationRule maps Procedures with Observation domain to observation
+	ProcedureToObservationRule = MappingRule{
+		Name: "procedures_to_observations",
+		Source: SourceSpec{
+			Section:   "Procedures",
+			EntryType: "Procedure",
+			Conditions: []Condition{
+				{Type: "domain_equals", Value: "Observation"},
+			},
+		},
+		Target: TargetSpec{
+			Table:         "observation",
+			TypeConceptID: ConceptEHRObservation,
+		},
+		Fields: []FieldMapping{
+			{Source: "Code.Code", Target: "observation_concept_id", Transform: "vocab", VocabField: "Code.CodeSystem"},
+			{Source: "EffectiveTime.Low|EffectiveTime.Value", Target: "observation_date", Transform: "date", Optional: true},
+			{Source: "EffectiveTime.Low|EffectiveTime.Value", Target: "observation_datetime", Transform: "time_ptr", Optional: true},
+			{Source: "Code", Target: "observation_source_value", Transform: "format_source"},
+		},
+		IDGen: IDGenSpec{
+			BaseFields: []string{"Code.Code", "EffectiveTime.Low"},
+			Generator:  "observation",
+		},
+	}
+
+	// ProcedureToMeasurementRule maps Procedures with Measurement domain to measurement
+	ProcedureToMeasurementRule = MappingRule{
+		Name: "procedures_to_measurements",
+		Source: SourceSpec{
+			Section:   "Procedures",
+			EntryType: "Procedure",
+			Conditions: []Condition{
+				{Type: "domain_equals", Value: "Measurement"},
+			},
+		},
+		Target: TargetSpec{
+			Table:         "measurement",
+			TypeConceptID: ConceptEHRObservation,
+		},
+		Fields: []FieldMapping{
+			{Source: "Code.Code", Target: "measurement_concept_id", Transform: "vocab", VocabField: "Code.CodeSystem"},
+			{Source: "EffectiveTime.Low|EffectiveTime.Value", Target: "measurement_date", Transform: "date", Optional: true},
+			{Source: "EffectiveTime.Low|EffectiveTime.Value", Target: "measurement_datetime", Transform: "time_ptr", Optional: true},
+			{Source: "Code", Target: "measurement_source_value", Transform: "format_source"},
+		},
+		IDGen: IDGenSpec{
+			BaseFields: []string{"Code.Code", "EffectiveTime.Low"},
+			Generator:  "measurement",
+		},
+	}
+
 	// VitalSignRule maps VitalSigns to measurement
 	VitalSignRule = MappingRule{
 		Name: "vitals_to_measurements",
 		Source: SourceSpec{
 			Section:   "VitalSigns",
 			EntryType: "VitalSign",
+			Conditions: []Condition{
+				{Type: "domain_equals", Value: "Measurement"},
+			},
 		},
 		Target: TargetSpec{
 			Table:         "measurement",
@@ -145,12 +232,44 @@ var (
 		},
 	}
 
+	// VitalSignToObservationRule maps VitalSigns with Observation domain to observation
+	VitalSignToObservationRule = MappingRule{
+		Name: "vitals_to_observations",
+		Source: SourceSpec{
+			Section:   "VitalSigns",
+			EntryType: "VitalSign",
+			Conditions: []Condition{
+				{Type: "domain_equals", Value: "Observation"},
+			},
+		},
+		Target: TargetSpec{
+			Table:         "observation",
+			TypeConceptID: ConceptEHRObservation,
+		},
+		Fields: []FieldMapping{
+			{Source: "Code.Code", Target: "observation_concept_id", Transform: "vocab", VocabField: "Code.CodeSystem"},
+			{Source: "EffectiveTime", Target: "observation_date", Transform: "date", Optional: true},
+			{Source: "EffectiveTime", Target: "observation_datetime", Transform: "time_ptr", Optional: true},
+			{Source: "Code", Target: "observation_source_value", Transform: "format_source"},
+			{Source: "Value", Target: "value_as_number", Transform: "float", Optional: true},
+			{Source: "Value", Target: "value_as_string", Transform: "string", Optional: true},
+			{Source: "Unit", Target: "unit_source_value", Transform: "string", Optional: true},
+		},
+		IDGen: IDGenSpec{
+			BaseFields: []string{"Code.Code", "EffectiveTime", "Value"},
+			Generator:  "observation",
+		},
+	}
+
 	// LabResultRule maps LabResults to measurement
 	LabResultRule = MappingRule{
 		Name: "labs_to_measurements",
 		Source: SourceSpec{
 			Section:   "LabResults",
 			EntryType: "LabResult",
+			Conditions: []Condition{
+				{Type: "domain_equals", Value: "Measurement"},
+			},
 		},
 		Target: TargetSpec{
 			Table:         "measurement",
@@ -175,12 +294,44 @@ var (
 		},
 	}
 
+	// LabResultToObservationRule maps LabResults with Observation domain to observation
+	LabResultToObservationRule = MappingRule{
+		Name: "labs_to_observations",
+		Source: SourceSpec{
+			Section:   "LabResults",
+			EntryType: "LabResult",
+			Conditions: []Condition{
+				{Type: "domain_equals", Value: "Observation"},
+			},
+		},
+		Target: TargetSpec{
+			Table:         "observation",
+			TypeConceptID: ConceptEHRObservation,
+		},
+		Fields: []FieldMapping{
+			{Source: "Code.Code", Target: "observation_concept_id", Transform: "vocab", VocabField: "Code.CodeSystem"},
+			{Source: "EffectiveTime", Target: "observation_date", Transform: "date", Optional: true},
+			{Source: "EffectiveTime", Target: "observation_datetime", Transform: "time_ptr", Optional: true},
+			{Source: "Code", Target: "observation_source_value", Transform: "format_source"},
+			{Source: "Value", Target: "value_as_number", Transform: "float", Optional: true},
+			{Source: "Value|ValueString", Target: "value_as_string", Transform: "string", Optional: true},
+			{Source: "Unit", Target: "unit_source_value", Transform: "string", Optional: true},
+		},
+		IDGen: IDGenSpec{
+			BaseFields: []string{"Code.Code", "EffectiveTime", "Value"},
+			Generator:  "observation",
+		},
+	}
+
 	// AllergyRule maps Allergies to observation
 	AllergyRule = MappingRule{
 		Name: "allergies_to_observations",
 		Source: SourceSpec{
 			Section:   "Allergies",
 			EntryType: "Allergy",
+			Conditions: []Condition{
+				{Type: "domain_equals", Value: "Observation"},
+			},
 		},
 		Target: TargetSpec{
 			Table:         "observation",
@@ -201,12 +352,41 @@ var (
 		},
 	}
 
+	// AllergyToConditionRule maps Allergies with Condition domain to condition_occurrence
+	AllergyToConditionRule = MappingRule{
+		Name: "allergies_to_conditions",
+		Source: SourceSpec{
+			Section:   "Allergies",
+			EntryType: "Allergy",
+			Conditions: []Condition{
+				{Type: "domain_equals", Value: "Condition"},
+			},
+		},
+		Target: TargetSpec{
+			Table:         "condition_occurrence",
+			TypeConceptID: ConceptEHRProblemList,
+		},
+		Fields: []FieldMapping{
+			{Source: "Substance.Code|Code.Code", Target: "condition_concept_id", Transform: "vocab", VocabField: "Substance.CodeSystem|Code.CodeSystem", Optional: true},
+			{Source: "EffectiveTime.Low|EffectiveTime.Value", Target: "condition_start_date", Transform: "date", Optional: true},
+			{Source: "EffectiveTime.Low|EffectiveTime.Value", Target: "condition_start_datetime", Transform: "time_ptr", Optional: true},
+			{Source: "Substance|Code", Target: "condition_source_value", Transform: "format_source", Optional: true},
+		},
+		IDGen: IDGenSpec{
+			BaseFields: []string{"Substance.Code", "EffectiveTime.Low"},
+			Generator:  "condition",
+		},
+	}
+
 	// SocialObservationRule maps SocialHistory observations to observation
 	SocialObservationRule = MappingRule{
 		Name: "social_to_observations",
 		Source: SourceSpec{
 			Section:   "Observations",
 			EntryType: "SocialObservation",
+			Conditions: []Condition{
+				{Type: "domain_equals", Value: "Observation"},
+			},
 		},
 		Target: TargetSpec{
 			Table:         "observation",
@@ -225,6 +405,60 @@ var (
 		IDGen: IDGenSpec{
 			BaseFields: []string{"Code.Code", "EffectiveTime.Low"},
 			Generator:  "observation",
+		},
+	}
+
+	// SocialToConditionRule maps SocialHistory with Condition domain to condition_occurrence
+	SocialToConditionRule = MappingRule{
+		Name: "social_to_conditions",
+		Source: SourceSpec{
+			Section:   "Observations",
+			EntryType: "SocialObservation",
+			Conditions: []Condition{
+				{Type: "domain_equals", Value: "Condition"},
+			},
+		},
+		Target: TargetSpec{
+			Table:         "condition_occurrence",
+			TypeConceptID: ConceptEHRProblemList,
+		},
+		Fields: []FieldMapping{
+			{Source: "Code.Code", Target: "condition_concept_id", Transform: "vocab", VocabField: "Code.CodeSystem"},
+			{Source: "EffectiveTime.Low|EffectiveTime.Value", Target: "condition_start_date", Transform: "date", Optional: true},
+			{Source: "EffectiveTime.Low|EffectiveTime.Value", Target: "condition_start_datetime", Transform: "time_ptr", Optional: true},
+			{Source: "Code", Target: "condition_source_value", Transform: "format_source"},
+		},
+		IDGen: IDGenSpec{
+			BaseFields: []string{"Code.Code", "EffectiveTime.Low"},
+			Generator:  "condition",
+		},
+	}
+
+	// SocialToMeasurementRule maps SocialHistory with Measurement domain to measurement
+	SocialToMeasurementRule = MappingRule{
+		Name: "social_to_measurements",
+		Source: SourceSpec{
+			Section:   "Observations",
+			EntryType: "SocialObservation",
+			Conditions: []Condition{
+				{Type: "domain_equals", Value: "Measurement"},
+			},
+		},
+		Target: TargetSpec{
+			Table:         "measurement",
+			TypeConceptID: ConceptEHRObservation,
+		},
+		Fields: []FieldMapping{
+			{Source: "Code.Code", Target: "measurement_concept_id", Transform: "vocab", VocabField: "Code.CodeSystem"},
+			{Source: "EffectiveTime.Low|EffectiveTime.Value", Target: "measurement_date", Transform: "date", Optional: true},
+			{Source: "EffectiveTime.Low|EffectiveTime.Value", Target: "measurement_datetime", Transform: "time_ptr", Optional: true},
+			{Source: "Code", Target: "measurement_source_value", Transform: "format_source"},
+			{Source: "ValueQuantity.Value", Target: "value_as_number", Transform: "float", Optional: true},
+			{Source: "ValueQuantity.Unit", Target: "unit_source_value", Transform: "string", Optional: true},
+		},
+		IDGen: IDGenSpec{
+			BaseFields: []string{"Code.Code", "EffectiveTime.Low"},
+			Generator:  "measurement",
 		},
 	}
 
@@ -255,15 +489,33 @@ var (
 	}
 
 	// AllRules contains all mapping rules
+	// Rules with domain conditions are evaluated in order - each entry is processed
+	// against all rules, and only rules whose conditions match will produce output.
 	AllRules = []MappingRule{
+		// Problems - route to condition or observation based on domain
 		ProblemRule,
+		ProblemToObservationRule,
+		// Medications and Immunizations - no domain routing
 		MedicationRule,
 		ImmunizationRule,
+		// Procedures - route to procedure, observation, or measurement based on domain
 		ProcedureRule,
+		ProcedureToObservationRule,
+		ProcedureToMeasurementRule,
+		// Vitals - route to measurement or observation based on domain
 		VitalSignRule,
+		VitalSignToObservationRule,
+		// Labs - route to measurement or observation based on domain
 		LabResultRule,
+		LabResultToObservationRule,
+		// Allergies - route to observation or condition based on domain
 		AllergyRule,
+		AllergyToConditionRule,
+		// Social History - route to observation, condition, or measurement based on domain
 		SocialObservationRule,
+		SocialToConditionRule,
+		SocialToMeasurementRule,
+		// Devices - no domain routing
 		DeviceRule,
 	}
 )
